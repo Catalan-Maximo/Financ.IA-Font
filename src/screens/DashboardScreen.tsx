@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, FlatList, ActivityIndicator, Alert } from 'react-native';
+import Button from '../components/Button';
 import api from '../services/api';
 import Header from '../components/Header';
 import Card from '../components/Card';
@@ -12,9 +13,10 @@ interface Activo {
 
 interface DashboardProps {
   perfil: string;
+  onIrAlSimulador: () => void;
 }
 
-export default function DashboardScreen({ perfil }: DashboardProps) {
+export default function DashboardScreen({ perfil, onIrAlSimulador }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [activos, setActivos] = useState<Activo[]>([]);
   const inflacionEstimada = 4.0; // Simulación de inflación mensual promedio
@@ -90,6 +92,14 @@ export default function DashboardScreen({ perfil }: DashboardProps) {
         renderItem={renderActivo}
         contentContainerStyle={{ gap: 15, paddingBottom: 20 }}
         scrollEnabled={true}
+        ListFooterComponent={
+          <Button
+            title="🧮 Simular Inversión"
+            onPress={onIrAlSimulador}
+            variant="primary"
+            style={styles.simuladorBtn}
+          />
+        }
       />
     </View>
   );
@@ -110,4 +120,5 @@ const styles = StyleSheet.create({
   value: { color: '#E1E1E6', fontSize: 13, fontWeight: '500' },
   greenText: { color: '#00B37E', fontWeight: 'bold' },
   redText: { color: '#F75A68', fontWeight: 'bold' },
+  simuladorBtn: { marginTop: 10 },
 });
