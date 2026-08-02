@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Alert, ActivityIndicator } from 'react-native';
 import api from '../services/api';
+import Header from '../components/Header';
+import Card from '../components/Card';
+import Button from '../components/Button';
 
 interface TestPerfilProps {
   onTestComplete: (perfil: string) => void;
@@ -8,7 +11,6 @@ interface TestPerfilProps {
 
 export default function TestPerfilScreen({ onTestComplete }: TestPerfilProps) {
   const [loading, setLoading] = useState(false);
-  const [pregunta1, setPregunta1] = useState<string | null>(null);
 
   const finalizarTest = async (opcionSeleccionada: string) => {
     setLoading(true);
@@ -45,21 +47,40 @@ export default function TestPerfilScreen({ onTestComplete }: TestPerfilProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.step}>Paso 1 de 1</Text>
-      <Text style={styles.question}>¿Qué harías si tus inversiones bajan un 10% en un mes?</Text>
-      
+      <Header text="Paso 1 de 1" level="label" style={styles.stepLabel} />
+      <Header
+        text="¿Qué harías si tus inversiones bajan un 10% en un mes?"
+        level="subtitle"
+        style={styles.question}
+      />
+
       <View style={styles.optionsContainer}>
-        <TouchableOpacity style={styles.optionButton} onPress={() => finalizarTest('A')}>
-          <Text style={styles.optionText}>A) Saco todo mi dinero inmediatamente para no perder más. (Evito el riesgo)</Text>
-        </TouchableOpacity>
+        <Card>
+          <Button
+            title="A) Saco todo mi dinero inmediatamente para no perder más. (Evito el riesgo)"
+            onPress={() => finalizarTest('A')}
+            variant="secondary"
+            textStyle={styles.optionText}
+          />
+        </Card>
 
-        <TouchableOpacity style={styles.optionButton} onPress={() => finalizarTest('B')}>
-          <Text style={styles.optionText}>B) Mantengo la calma y espero a que el mercado se recupere. (Riesgo medio)</Text>
-        </TouchableOpacity>
+        <Card>
+          <Button
+            title="B) Mantengo la calma y espero a que el mercado se recupere. (Riesgo medio)"
+            onPress={() => finalizarTest('B')}
+            variant="secondary"
+            textStyle={styles.optionText}
+          />
+        </Card>
 
-        <TouchableOpacity style={styles.optionButton} onPress={() => finalizarTest('C')}>
-          <Text style={styles.optionText}>C) Invierto más dinero aprovechando que está barato. (Busco máximo rendimiento)</Text>
-        </TouchableOpacity>
+        <Card>
+          <Button
+            title="C) Invierto más dinero aprovechando que está barato. (Busco máximo rendimiento)"
+            onPress={() => finalizarTest('C')}
+            variant="secondary"
+            textStyle={styles.optionText}
+          />
+        </Card>
       </View>
     </View>
   );
@@ -67,9 +88,8 @@ export default function TestPerfilScreen({ onTestComplete }: TestPerfilProps) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#121214', justifyContent: 'center', padding: 20 },
-  step: { color: '#00B37E', fontSize: 14, fontWeight: 'bold', marginBottom: 10 },
-  question: { color: '#FFFFFF', fontSize: 22, fontWeight: 'bold', marginBottom: 30, lineHeight: 32 },
+  stepLabel: { marginBottom: 10 },
+  question: { marginBottom: 30 },
   optionsContainer: { gap: 15 },
-  optionButton: { backgroundColor: '#202024', padding: 20, borderRadius: 8, borderWidth: 1, borderColor: '#323238' },
-  optionText: { color: '#C4C4CC', fontSize: 15, lineHeight: 22 }
+  optionText: { color: '#C4C4CC', fontSize: 15, lineHeight: 22, textAlign: 'left' },
 });
