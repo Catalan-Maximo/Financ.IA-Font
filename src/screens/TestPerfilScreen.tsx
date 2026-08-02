@@ -31,7 +31,12 @@ export default function TestPerfilScreen({ onTestComplete }: TestPerfilProps) {
       onTestComplete(response.data.perfilInversor);
     } catch (error) {
       console.error(error);
-      Alert.alert('Error ❌', 'No se pudo guardar tu perfil en el backend.');
+      // Fallback: avanzamos con el perfil calculado localmente
+      Alert.alert(
+        'Modo Offline ⚠️',
+        `No se pudo conectar al backend, pero tu perfil fue asignado localmente como: ${perfilCalculado}`,
+      );
+      onTestComplete(perfilCalculado);
     } finally {
       setLoading(false);
     }
