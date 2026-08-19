@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text, StyleSheet, TextStyle } from 'react-native';
+import { colors } from '../theme/colors';
 
 /**
  * Nivel jerárquico del encabezado.
@@ -29,24 +30,24 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 24,
   },
 
   subtitle: {
-    color: '#FFFFFF',
+    color: colors.text,
     fontSize: 22,
     lineHeight: 32,
   },
 
   section: {
-    color: '#8D8D99',
+    color: colors.textMuted,
     fontSize: 14,
     textTransform: 'uppercase',
   },
 
   label: {
-    color: '#00B37E',
+    color: colors.primary,
     fontSize: 14,
   },
 });

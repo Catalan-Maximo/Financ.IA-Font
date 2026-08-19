@@ -7,11 +7,12 @@ import {
   ViewStyle,
   TextStyle,
 } from 'react-native';
+import { colors } from '../theme/colors';
 
 /**
  * Variantes de estilo del botón.
- * - primary: fondo verde (#00B37E) con texto blanco.
- * - secondary: fondo gris oscuro (#202024) con borde.
+ * - primary: fondo verde con texto blanco.
+ * - secondary: fondo gris oscuro con borde.
  * - outline: fondo transparente con borde verde y texto verde.
  */
 type ButtonVariant = 'primary' | 'secondary' | 'outline';
@@ -59,7 +60,7 @@ export default function Button({
       {loading ? (
         <ActivityIndicator
           size="small"
-          color={variant === 'primary' ? '#FFFFFF' : '#00B37E'}
+          color={variant === 'primary' ? colors.text : colors.primary}
         />
       ) : (
         <Text style={[styles.text, styles[`${variant}Text`], textStyle]}>
@@ -82,17 +83,17 @@ const styles = StyleSheet.create({
 
   /* ── Variantes de contenedor ──────────────── */
   primary: {
-    backgroundColor: '#00B37E',
+    backgroundColor: colors.primary,
   },
   secondary: {
-    backgroundColor: '#202024',
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#323238',
+    borderColor: colors.border,
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#00B37E',
+    borderColor: colors.primary,
   },
 
   /* ── Estado deshabilitado ─────────────────── */
@@ -106,12 +107,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   primaryText: {
-    color: '#FFFFFF',
+    color: colors.text,
   },
   secondaryText: {
-    color: '#C4C4CC',
+    color: colors.textSecondary,
   },
   outlineText: {
-    color: '#00B37E',
+    color: colors.primary,
   },
 });

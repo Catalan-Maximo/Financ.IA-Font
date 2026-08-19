@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -8,63 +8,39 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import api from '../services/api';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import type { ComparacionRequest, ComparacionResponse, RendimientoDTO } from '../types/inversion';
+import useSimulador from '../hooks/useSimulador';
+import type { RendimientoDTO } from '../domain/inversion';
+import { colors } from '../theme/colors';
 
 interface SimuladorProps {
   perfil: string;
 }
 
 export default function SimuladorScreen({ perfil }: SimuladorProps) {
-  const [monto, setMonto] = useState('100000');
-  const [plazo, setPlazo] = useState('6');
-  const [inflacion, setInflacion] = useState('4.0');
-  const [loading, setLoading] = useState(false);
-  const [resultado, setResultado] = useState<ComparacionResponse | null>(null);
+  const {
+    monto, setMonto,
+    plazo, setPlazo,
+    inflacion, setInflacion,
+    loading,
+    resultado,
+    error, limpiarError,
+    simular,
+  } = useSimulador();
 
-  const simular = async () => {
-    const montoNum = parseFloat(monto);
-    const plazoNum = parseInt(plazo, 10);
-    const inflacionNum = parseFloat(inflacion);
-
-    if (isNaN(montoNum) || montoNum <= 0) {
-      Alert.alert('Error', 'Ingresá un monto válido mayor a 0.');
-      return;
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error, [{ text: 'OK', onPress: limpiarError }]);
     }
-    if (isNaN(plazoNum) || plazoNum <= 0) {
-      Alert.alert('Error', 'Ingresá un plazo válido en meses.');
-      return;
-    }
-    if (isNaN(inflacionNum) || inflacionNum < 0) {
-      Alert.alert('Error', 'Ingresá un porcentaje de inflación válido.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const body: ComparacionRequest = {
-        monto: montoNum,
-        plazoMeses: plazoNum,
-        inflacionMensual: inflacionNum,
-      };
-      const response = await api.post<ComparacionResponse>('/activos/comparar', body);
-      setResultado(response.data);
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error ❌', 'No se pudo conectar con el backend para simular.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [error, limpiarError]);
 
   const formatPesos = (valor: number) =>
     `$${valor.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const renderRendimiento = (item: RendimientoDTO, index: number) => {
-    const esMejor = resultado?.mejorOpcion === item.entidad;
+    const esMejor = resultado?.mejorOpcion === item.tipo;
 
     return (
       <Card
@@ -145,7 +121,7 @@ export default function SimuladorScreen({ perfil }: SimuladorProps) {
           onChangeText={setMonto}
           keyboardType="numeric"
           placeholder="100000"
-          placeholderTextColor="#7C7C8A"
+          placeholderTextColor={colors.textFaint}
         />
 
         <Text style={styles.inputLabel}>📅 Plazo (meses)</Text>
@@ -155,7 +131,7 @@ export default function SimuladorScreen({ perfil }: SimuladorProps) {
           onChangeText={setPlazo}
           keyboardType="numeric"
           placeholder="6"
-          placeholderTextColor="#7C7C8A"
+          placeholderTextColor={colors.textFaint}
         />
 
         <Text style={styles.inputLabel}>📈 Inflación mensual estimada (%)</Text>
@@ -165,7 +141,7 @@ export default function SimuladorScreen({ perfil }: SimuladorProps) {
           onChangeText={setInflacion}
           keyboardType="numeric"
           placeholder="4.0"
-          placeholderTextColor="#7C7C8A"
+          placeholderTextColor={colors.textFaint}
         />
 
         <Button
@@ -179,7 +155,7 @@ export default function SimuladorScreen({ perfil }: SimuladorProps) {
       {/* ── Resultados ─── */}
       {loading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#00B37E" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       )}
 
@@ -210,13 +186,13 @@ export default function SimuladorScreen({ perfil }: SimuladorProps) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121214' },
+  container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 20, paddingTop: 60, paddingBottom: 40 },
 
   /* ── Top Bar ─── */
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  perfilBadge: { backgroundColor: '#293845', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20 },
-  perfilText: { color: '#00B37E', fontWeight: 'bold', fontSize: 12 },
+  perfilBadge: { backgroundColor: colors.badgeBg, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20 },
+  perfilText: { color: colors.primary, fontWeight: 'bold', fontSize: 12 },
 
   /* ── Títulos ─── */
   titleSpacing: { marginBottom: 6 },
@@ -224,16 +200,16 @@ const styles = StyleSheet.create({
 
   /* ── Formulario ─── */
   formCard: { marginBottom: 20 },
-  inputLabel: { color: '#E1E1E6', fontSize: 14, fontWeight: '600', marginBottom: 6, marginTop: 12 },
+  inputLabel: { color: colors.textPrimary, fontSize: 14, fontWeight: '600', marginBottom: 6, marginTop: 12 },
   input: {
-    backgroundColor: '#121214',
-    color: '#FFFFFF',
+    backgroundColor: colors.background,
+    color: colors.text,
     fontSize: 16,
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#323238',
+    borderColor: colors.border,
   },
   simularBtn: { marginTop: 20 },
 
@@ -244,26 +220,26 @@ const styles = StyleSheet.create({
   resumenCard: { marginBottom: 15 },
 
   resultCard: { marginBottom: 15, padding: 16 },
-  mejorCard: { borderColor: '#00B37E', borderWidth: 2 },
-  mejorBadge: { backgroundColor: '#00875F', paddingVertical: 4, paddingHorizontal: 10, borderRadius: 4, alignSelf: 'flex-start', marginBottom: 10 },
-  mejorBadgeText: { color: '#FFFFFF', fontSize: 11, fontWeight: 'bold' },
+  mejorCard: { borderColor: colors.primary, borderWidth: 2 },
+  mejorBadge: { backgroundColor: colors.primaryDark, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 4, alignSelf: 'flex-start', marginBottom: 10 },
+  mejorBadgeText: { color: colors.text, fontSize: 11, fontWeight: 'bold' },
 
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  entidad: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
-  tipo: { color: '#7C7C8A', fontSize: 12 },
+  entidad: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
+  tipo: { color: colors.textFaint, fontSize: 12 },
 
-  separator: { height: 1, backgroundColor: '#323238', marginVertical: 10 },
+  separator: { height: 1, backgroundColor: colors.border, marginVertical: 10 },
 
   row: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
-  label: { color: '#C4C4CC', fontSize: 13 },
-  value: { color: '#E1E1E6', fontSize: 13, fontWeight: '500' },
-  valueHighlight: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold' },
+  label: { color: colors.textSecondary, fontSize: 13 },
+  value: { color: colors.textPrimary, fontSize: 13, fontWeight: '500' },
+  valueHighlight: { color: colors.text, fontSize: 14, fontWeight: 'bold' },
 
-  green: { color: '#00B37E', fontWeight: 'bold' },
-  red: { color: '#F75A68', fontWeight: 'bold' },
+  green: { color: colors.primary, fontWeight: 'bold' },
+  red: { color: colors.danger, fontWeight: 'bold' },
 
   indicador: { marginTop: 12, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 6, alignItems: 'center' },
-  indicadorGana: { backgroundColor: '#1B3A2D' },
-  indicadorPierde: { backgroundColor: '#3D1F24' },
-  indicadorText: { color: '#E1E1E6', fontSize: 13, fontWeight: '600' },
+  indicadorGana: { backgroundColor: colors.successBg },
+  indicadorPierde: { backgroundColor: colors.dangerBg },
+  indicadorText: { color: colors.textPrimary, fontSize: 13, fontWeight: '600' },
 });

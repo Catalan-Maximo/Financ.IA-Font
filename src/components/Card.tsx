@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
+import { colors } from '../theme/colors';
 
 interface CardProps {
   /** Contenido interno de la tarjeta. */
@@ -10,7 +11,7 @@ interface CardProps {
 
 /**
  * Tarjeta contenedor reutilizable.
- * Provee fondo oscuro (#202024), borde sutil y border-radius
+ * Provee fondo oscuro, borde sutil y border-radius
  * consistente con el sistema de diseño de FinancIA.
  */
 export default function Card({ children, style }: CardProps) {
@@ -19,10 +20,10 @@ export default function Card({ children, style }: CardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#202024',
+    backgroundColor: colors.surface,
     padding: 20,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#323238',
+    borderColor: colors.border,
   },
 });

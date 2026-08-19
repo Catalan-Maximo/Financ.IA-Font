@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -8,70 +8,41 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import api from '../services/api';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Button from '../components/Button';
-import type { IARequest, IAResponse, Asignacion } from '../types/ia';
+import useAsesorIA from '../hooks/useAsesorIA';
+import type { Asignacion } from '../domain/ia';
+import { colors } from '../theme/colors';
+import { RIESGO_ESTILOS } from '../constants';
 
 interface AsesorVirtualProps {
   perfil: string;
 }
 
-/** Colores de la insignia según nivel de riesgo. */
-const RIESGO_ESTILOS: Record<string, { bg: string; texto: string }> = {
-  Bajo: { bg: '#1B3A2D', texto: '#00B37E' },
-  Medio: { bg: '#3D3320', texto: '#FBA94C' },
-  Alto: { bg: '#3D1F24', texto: '#F75A68' },
-};
-
 export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
-  const [monto, setMonto] = useState('100000');
-  const [plazo, setPlazo] = useState('6');
-  const [inflacion, setInflacion] = useState('4.0');
-  const [loading, setLoading] = useState(false);
-  const [respuesta, setRespuesta] = useState<IAResponse | null>(null);
+  const {
+    monto, setMonto,
+    plazo, setPlazo,
+    inflacion, setInflacion,
+    loading,
+    respuesta,
+    error, limpiarError,
+    consultar,
+  } = useAsesorIA(perfil);
 
-  const consultar = async () => {
-    const montoNum = parseFloat(monto);
-    const plazoNum = parseInt(plazo, 10);
-    const inflacionNum = parseFloat(inflacion);
-
-    if (isNaN(montoNum) || montoNum <= 0) {
-      Alert.alert('Error', 'Ingresá un monto válido mayor a 0.');
-      return;
+  useEffect(() => {
+    if (error) {
+      Alert.alert('Error', error, [{ text: 'OK', onPress: limpiarError }]);
     }
-    if (isNaN(plazoNum) || plazoNum <= 0) {
-      Alert.alert('Error', 'Ingresá un plazo válido en meses.');
-      return;
-    }
-    if (isNaN(inflacionNum) || inflacionNum < 0) {
-      Alert.alert('Error', 'Ingresá un porcentaje de inflación válido.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const body: IARequest = {
-        perfilInversor: perfil,
-        monto: montoNum,
-        plazoMeses: plazoNum,
-        inflacionMensual: inflacionNum,
-      };
-      const response = await api.post<IAResponse>('/ia/simular', body);
-      setRespuesta(response.data);
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error ❌', 'No se pudo conectar con el asesor virtual.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [error, limpiarError]);
 
   const formatPesos = (valor: number) =>
     `$${valor.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  const riesgoEstilo = respuesta ? RIESGO_ESTILOS[respuesta.nivelRiesgo] ?? RIESGO_ESTILOS.Medio : RIESGO_ESTILOS.Medio;
+  const riesgoEstilo = respuesta
+    ? RIESGO_ESTILOS[respuesta.nivelRiesgo] ?? RIESGO_ESTILOS.Medio
+    : RIESGO_ESTILOS.Medio;
 
   const renderAsignacion = (asignacion: Asignacion, index: number) => (
     <Card key={index} style={styles.asignacionCard}>
@@ -115,7 +86,7 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
           onChangeText={setMonto}
           keyboardType="numeric"
           placeholder="100000"
-          placeholderTextColor="#7C7C8A"
+          placeholderTextColor={colors.textFaint}
         />
 
         <Text style={styles.inputLabel}>📅 Plazo (meses)</Text>
@@ -125,7 +96,7 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
           onChangeText={setPlazo}
           keyboardType="numeric"
           placeholder="6"
-          placeholderTextColor="#7C7C8A"
+          placeholderTextColor={colors.textFaint}
         />
 
         <Text style={styles.inputLabel}>📈 Inflación mensual estimada (%)</Text>
@@ -135,7 +106,7 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
           onChangeText={setInflacion}
           keyboardType="numeric"
           placeholder="4.0"
-          placeholderTextColor="#7C7C8A"
+          placeholderTextColor={colors.textFaint}
         />
 
         <Button
@@ -149,7 +120,7 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
       {/* ── Resultados ─── */}
       {loading && (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#00B37E" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       )}
 
@@ -201,13 +172,13 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121214' },
+  container: { flex: 1, backgroundColor: colors.background },
   content: { padding: 20, paddingTop: 60, paddingBottom: 40 },
 
   /* ── Top Bar ─── */
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  perfilBadge: { backgroundColor: '#293845', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20 },
-  perfilText: { color: '#00B37E', fontWeight: 'bold', fontSize: 12 },
+  perfilBadge: { backgroundColor: colors.badgeBg, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20 },
+  perfilText: { color: colors.primary, fontWeight: 'bold', fontSize: 12 },
 
   /* ── Títulos ─── */
   titleSpacing: { marginBottom: 6 },
@@ -215,16 +186,16 @@ const styles = StyleSheet.create({
 
   /* ── Formulario ─── */
   formCard: { marginBottom: 20 },
-  inputLabel: { color: '#E1E1E6', fontSize: 14, fontWeight: '600', marginBottom: 6, marginTop: 12 },
+  inputLabel: { color: colors.textPrimary, fontSize: 14, fontWeight: '600', marginBottom: 6, marginTop: 12 },
   input: {
-    backgroundColor: '#121214',
-    color: '#FFFFFF',
+    backgroundColor: colors.background,
+    color: colors.text,
     fontSize: 16,
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#323238',
+    borderColor: colors.border,
   },
   consultarBtn: { marginTop: 20 },
 
@@ -241,38 +212,38 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   riesgoBadgeText: { fontWeight: 'bold', fontSize: 13 },
-  recomendacionTexto: { color: '#E1E1E6', fontSize: 14, lineHeight: 22 },
+  recomendacionTexto: { color: colors.textPrimary, fontSize: 14, lineHeight: 22 },
 
-  separator: { height: 1, backgroundColor: '#323238', marginVertical: 14 },
+  separator: { height: 1, backgroundColor: colors.border, marginVertical: 14 },
 
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  label: { color: '#C4C4CC', fontSize: 13 },
+  label: { color: colors.textSecondary, fontSize: 13 },
   gananciaTexto: { fontSize: 16, fontWeight: 'bold' },
-  green: { color: '#00B37E' },
-  red: { color: '#F75A68' },
+  green: { color: colors.primary },
+  red: { color: colors.danger },
 
   /* ── Distribución ─── */
   resultHeader: { marginBottom: 15 },
   asignacionCard: { marginBottom: 12, padding: 16 },
   asignacionHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  asignacionTipo: { color: '#FFFFFF', fontSize: 15, fontWeight: 'bold' },
-  asignacionPorcentaje: { color: '#00B37E', fontSize: 16, fontWeight: 'bold' },
+  asignacionTipo: { color: colors.text, fontSize: 15, fontWeight: 'bold' },
+  asignacionPorcentaje: { color: colors.primary, fontSize: 16, fontWeight: 'bold' },
   progressTrack: {
     height: 8,
-    backgroundColor: '#29292E',
+    backgroundColor: colors.surfaceLight,
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 10,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#00B37E',
+    backgroundColor: colors.primary,
     borderRadius: 4,
   },
-  asignacionMotivo: { color: '#8D8D99', fontSize: 12, lineHeight: 18 },
+  asignacionMotivo: { color: colors.textMuted, fontSize: 12, lineHeight: 18 },
 
   /* ── Resumen ─── */
   resumenCard: { marginTop: 8, padding: 16 },
   resumenTitulo: { marginBottom: 10 },
-  resumenTexto: { color: '#C4C4CC', fontSize: 13, lineHeight: 20 },
+  resumenTexto: { color: colors.textSecondary, fontSize: 13, lineHeight: 20 },
 });
