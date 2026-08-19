@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import api from '../lib/api';
+import { guardarPerfil } from '../lib/storage';
 import { PREGUNTAS } from '../constants/cuestionario';
 import { clasificarPerfilLocal } from '../domain/perfil';
 
@@ -47,15 +48,20 @@ export default function useTestPerfil(onTestComplete: (perfil: string) => void) 
         puntaje: nuevoPuntaje,
       });
 
+      const perfilAsignado = response.data.perfilInversor;
+      await guardarPerfilSeguro(perfilAsignado);
+
       setAviso({
         titulo: '¡Test Completado! 🎉',
-        mensaje: `Tu puntaje: ${nuevoPuntaje} puntos. Perfil asignado: ${response.data.perfilInversor}`,
+        mensaje: `Tu puntaje: ${nuevoPuntaje} puntos. Perfil asignado: ${perfilAsignado}`,
       });
-      onTestComplete(response.data.perfilInversor);
+      onTestComplete(perfilAsignado);
     } catch (error) {
       console.error(error);
       // Fallback: clasificamos localmente y avanzamos igual
       const perfilLocal = clasificarPerfilLocal(nuevoPuntaje);
+      await guardarPerfilSeguro(perfilLocal);
+
       setAviso({
         titulo: 'Modo Offline ⚠️',
         mensaje: `No se pudo conectar al backend, pero tu perfil fue asignado localmente como: ${perfilLocal}`,
@@ -63,6 +69,15 @@ export default function useTestPerfil(onTestComplete: (perfil: string) => void) 
       onTestComplete(perfilLocal);
     } finally {
       setLoading(false);
+    }
+  };
+
+  /** Guarda el perfil localmente sin romper el flujo si el storage falla. */
+  const guardarPerfilSeguro = async (perfil: string) => {
+    try {
+      await guardarPerfil(perfil);
+    } catch (error) {
+      console.warn('No se pudo guardar el perfil en el dispositivo', error);
     }
   };
 

@@ -1,20 +1,40 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import TestPerfilScreen from './src/screens/TestPerfilScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import SimuladorScreen from './src/screens/SimuladorScreen';
 import AsesorVirtualScreen from './src/screens/AsesorVirtualScreen';
 import BottomNav, { TabKey } from './src/components/BottomNav';
+import usePerfilGuardado from './src/hooks/usePerfilGuardado';
+import { colors } from './src/theme/colors';
 
 export default function App() {
   const [perfilUsuario, setPerfilUsuario] = useState<string>('Moderado');
   const [testCompletado, setTestCompletado] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
+  const { perfilGuardado, cargando } = usePerfilGuardado();
 
   const manejarTestCompleto = (perfilAsignado: string) => {
     setPerfilUsuario(perfilAsignado);
     setTestCompletado(true); // A partir de acá, mostramos las pestañas
   };
+
+  // Si hay un perfil guardado de una sesión anterior, saltamos el test
+  useEffect(() => {
+    if (perfilGuardado) {
+      setPerfilUsuario(perfilGuardado);
+      setTestCompletado(true);
+    }
+  }, [perfilGuardado]);
+
+  // Splash de arranque mientras leemos el storage
+  if (cargando) {
+    return (
+      <View style={styles.splash}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   // El test es onboarding: pantalla única, sin pestañas.
   // Las pestañas aparecen recién cuando el usuario completa el test.
@@ -48,6 +68,7 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121214' },
+  container: { flex: 1, backgroundColor: colors.background },
   contenido: { flex: 1 },
+  splash: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
 });
