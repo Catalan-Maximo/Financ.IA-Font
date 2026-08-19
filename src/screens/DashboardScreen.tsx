@@ -14,9 +14,10 @@ interface Activo {
 interface DashboardProps {
   perfil: string;
   onIrAlSimulador: () => void;
+  onIrAlAsesor: () => void;
 }
 
-export default function DashboardScreen({ perfil, onIrAlSimulador }: DashboardProps) {
+export default function DashboardScreen({ perfil, onIrAlSimulador, onIrAlAsesor }: DashboardProps) {
   const [loading, setLoading] = useState(true);
   const [activos, setActivos] = useState<Activo[]>([]);
   const inflacionEstimada = 4.0; // Simulación de inflación mensual promedio
@@ -88,17 +89,25 @@ export default function DashboardScreen({ perfil, onIrAlSimulador }: DashboardPr
 
       <FlatList
         data={activos}
-        keyExtractor={(item, index) => index.toString()}
+        keyExtractor={(_, index) => index.toString()}
         renderItem={renderActivo}
         contentContainerStyle={{ gap: 15, paddingBottom: 20 }}
         scrollEnabled={true}
         ListFooterComponent={
-          <Button
-            title="🧮 Simular Inversión"
-            onPress={onIrAlSimulador}
-            variant="primary"
-            style={styles.simuladorBtn}
-          />
+          <View style={styles.footer}>
+            <Button
+              title="🧮 Simular Inversión"
+              onPress={onIrAlSimulador}
+              variant="primary"
+              style={styles.footerBtn}
+            />
+            <Button
+              title="🤖 Asesor Virtual"
+              onPress={onIrAlAsesor}
+              variant="outline"
+              style={styles.footerBtn}
+            />
+          </View>
         }
       />
     </View>
@@ -120,5 +129,6 @@ const styles = StyleSheet.create({
   value: { color: '#E1E1E6', fontSize: 13, fontWeight: '500' },
   greenText: { color: '#00B37E', fontWeight: 'bold' },
   redText: { color: '#F75A68', fontWeight: 'bold' },
-  simuladorBtn: { marginTop: 10 },
+  footer: { gap: 10, marginTop: 10 },
+  footerBtn: { width: '100%' },
 });
