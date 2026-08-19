@@ -1,46 +1,53 @@
 import React, { useState } from 'react';
+import { View, StyleSheet } from 'react-native';
 import TestPerfilScreen from './src/screens/TestPerfilScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import SimuladorScreen from './src/screens/SimuladorScreen';
 import AsesorVirtualScreen from './src/screens/AsesorVirtualScreen';
+import BottomNav, { TabKey } from './src/components/BottomNav';
 
 export default function App() {
-  // Manejamos el flujo mediante estados simples
-  const [screen, setScreen] = useState<'test' | 'dashboard' | 'simulador' | 'asesor'>('test');
   const [perfilUsuario, setPerfilUsuario] = useState<string>('Moderado');
+  const [testCompletado, setTestCompletado] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
 
   const manejarTestCompleto = (perfilAsignado: string) => {
     setPerfilUsuario(perfilAsignado);
-    setScreen('dashboard'); // Al terminar el test, saltamos automáticamente al dashboard
+    setTestCompletado(true); // A partir de acá, mostramos las pestañas
   };
 
-  if (screen === 'test') {
+  // El test es onboarding: pantalla única, sin pestañas.
+  // Las pestañas aparecen recién cuando el usuario completa el test.
+  if (!testCompletado) {
     return <TestPerfilScreen onTestComplete={manejarTestCompleto} />;
   }
 
-  if (screen === 'simulador') {
-    return (
-      <SimuladorScreen
-        perfil={perfilUsuario}
-        onVolver={() => setScreen('dashboard')}
-      />
-    );
-  }
-
-  if (screen === 'asesor') {
-    return (
-      <AsesorVirtualScreen
-        perfil={perfilUsuario}
-        onVolver={() => setScreen('dashboard')}
-      />
-    );
-  }
+  const renderPantalla = () => {
+    switch (activeTab) {
+      case 'simulador':
+        return <SimuladorScreen perfil={perfilUsuario} />;
+      case 'asesor':
+        return <AsesorVirtualScreen perfil={perfilUsuario} />;
+      default:
+        return (
+          <DashboardScreen
+            perfil={perfilUsuario}
+            onIrAlSimulador={() => setActiveTab('simulador')}
+            onIrAlAsesor={() => setActiveTab('asesor')}
+          />
+        );
+    }
+  };
 
   return (
-    <DashboardScreen
-      perfil={perfilUsuario}
-      onIrAlSimulador={() => setScreen('simulador')}
-      onIrAlAsesor={() => setScreen('asesor')}
-    />
+    <View style={styles.container}>
+      <View style={styles.contenido}>{renderPantalla()}</View>
+      <BottomNav activeTab={activeTab} onChange={setActiveTab} />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#121214' },
+  contenido: { flex: 1 },
+});

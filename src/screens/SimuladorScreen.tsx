@@ -16,10 +16,9 @@ import type { ComparacionRequest, ComparacionResponse, RendimientoDTO } from '..
 
 interface SimuladorProps {
   perfil: string;
-  onVolver: () => void;
 }
 
-export default function SimuladorScreen({ perfil, onVolver }: SimuladorProps) {
+export default function SimuladorScreen({ perfil }: SimuladorProps) {
   const [monto, setMonto] = useState('100000');
   const [plazo, setPlazo] = useState('6');
   const [inflacion, setInflacion] = useState('4.0');
@@ -125,7 +124,6 @@ export default function SimuladorScreen({ perfil, onVolver }: SimuladorProps) {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.topBar}>
-        <Button title="← Volver" onPress={onVolver} variant="outline" style={styles.volverBtn} />
         <View style={styles.perfilBadge}>
           <Text style={styles.perfilText}>Perfil: {perfil}</Text>
         </View>
@@ -217,7 +215,6 @@ const styles = StyleSheet.create({
 
   /* ── Top Bar ─── */
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  volverBtn: { paddingVertical: 8, paddingHorizontal: 16 },
   perfilBadge: { backgroundColor: '#293845', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20 },
   perfilText: { color: '#00B37E', fontWeight: 'bold', fontSize: 12 },
 
