@@ -1,6 +1,15 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { View, Text, Pressable, StyleSheet, Platform, Animated } from 'react-native';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../theme/colors';
+import { typography } from '../theme/typography';
+import { spacing } from '../theme/spacing';
+
+/** Altura de la barra (sin contar el safe area inferior). */
+export const TAB_BAR_HEIGHT = 50;
 
 /** Pestañas disponibles en la navegación inferior. */
 export type TabKey = 'dashboard' | 'simulador' | 'asesor';
@@ -12,63 +21,120 @@ interface BottomNavProps {
   onChange: (tab: TabKey) => void;
 }
 
-const TABS: { key: TabKey; icono: string; label: string }[] = [
-  { key: 'dashboard', icono: '🏠', label: 'Inicio' },
-  { key: 'simulador', icono: '🧮', label: 'Simulador' },
-  { key: 'asesor', icono: '🤖', label: 'Asesor' },
+const TABS: { key: TabKey; icono: keyof typeof Ionicons.glyphMap; iconoActivo: keyof typeof Ionicons.glyphMap; label: string }[] = [
+  { key: 'dashboard', icono: 'home-outline', iconoActivo: 'home', label: 'Inicio' },
+  { key: 'simulador', icono: 'calculator-outline', iconoActivo: 'calculator', label: 'Simulador' },
+  { key: 'asesor', icono: 'sparkles-outline', iconoActivo: 'sparkles', label: 'Asesor' },
 ];
 
-/**
- * Barra de navegación inferior reutilizable.
- * Muestra las pestañas principales de la app y resalta la activa
- * con color e indicador.
- */
-export default function BottomNav({ activeTab, onChange }: BottomNavProps) {
+const spring = { tension: 250, friction: 32, useNativeDriver: true };
+
+/** Ícono de pestaña con spring de escala cuando pasa a activa. */
+function TabIcon({
+  name,
+  active,
+  color,
+}: {
+  name: keyof typeof Ionicons.glyphMap;
+  active: boolean;
+  color: string;
+}) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.spring(scale, { ...spring, toValue: active ? 1.05 : 1 }).start();
+  }, [active, scale]);
+
   return (
-    <View style={styles.bar}>
-      {TABS.map((tab) => {
-        const esActiva = tab.key === activeTab;
-        return (
-          <TouchableOpacity
-            key={tab.key}
-            style={styles.tab}
-            onPress={() => onChange(tab.key)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.icono}>{tab.icono}</Text>
-            <Text style={[styles.label, esActiva && styles.labelActiva]}>
-              {tab.label}
-            </Text>
-            {esActiva && <View style={styles.indicador} />}
-          </TouchableOpacity>
-        );
-      })}
-    </View>
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <Ionicons name={name} size={24} color={color} />
+    </Animated.View>
   );
 }
 
-const styles = StyleSheet.create({
-  bar: {
-    flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: 8,
-    paddingBottom: 20, // espacio extra para el home indicator del celular
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-  },
-  icono: { fontSize: 20 },
-  label: { color: colors.textMuted, fontSize: 11, fontWeight: '600' },
-  labelActiva: { color: colors.primary },
-  indicador: {
-    width: 24,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: colors.primary,
-    marginTop: 2,
-  },
-});
+/**
+ * Barra de navegación inferior flotante: material translúcido (blur real),
+ * íconos SF-Symbols-like y tint de marca para la pestaña activa.
+ */
+export default function BottomNav({ activeTab, onChange }: BottomNavProps) {
+  const { colors, dark } = useTheme();
+  const insets = useSafeAreaInsets();
+  const s = useMemo(() => makeStyles(colors), [colors]);
+
+  // Aparición de la barra al completar el test (fade + slide desde abajo)
+  const aparicion = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(aparicion, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+  }, [aparicion]);
+
+  const handlePress = (tab: TabKey) => {
+    if (Platform.OS !== 'web') {
+      Haptics.selectionAsync();
+    }
+    onChange(tab);
+  };
+
+  const fondo = { backgroundColor: colors.secondarySystemBackground };
+
+  return (
+    <Animated.View
+      style={[
+        s.bar,
+        { height: TAB_BAR_HEIGHT + insets.bottom, paddingBottom: insets.bottom },
+        {
+          opacity: aparicion,
+          transform: [{ translateY: aparicion.interpolate({ inputRange: [0, 1], outputRange: [25, 0] }) }],
+        },
+      ]}
+    >
+      {/* expo-blur no soporta web: fallback a fondo sólido */}
+      {Platform.OS === 'web' ? (
+        <View style={[StyleSheet.absoluteFill, fondo]} />
+      ) : (
+        <BlurView intensity={80} tint={dark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+      )}
+
+      {TABS.map((tab) => {
+        const esActiva = tab.key === activeTab;
+        return (
+          <Pressable key={tab.key} style={s.tab} onPress={() => handlePress(tab.key)}>
+            <TabIcon
+              name={esActiva ? tab.iconoActivo : tab.icono}
+              active={esActiva}
+              color={esActiva ? colors.brand : colors.secondaryLabel}
+            />
+            <Text style={[s.label, esActiva && s.labelActiva]}>{tab.label}</Text>
+          </Pressable>
+        );
+      })}
+    </Animated.View>
+  );
+}
+
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
+  StyleSheet.create({
+    bar: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      flexDirection: 'row',
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.separator,
+      overflow: 'hidden',
+    },
+    tab: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+    },
+    label: {
+      ...typography.caption2,
+      fontWeight: '600',
+      color: colors.secondaryLabel,
+    },
+    labelActiva: {
+      color: colors.brand,
+    },
+  });

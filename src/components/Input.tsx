@@ -1,0 +1,67 @@
+import React, { useMemo } from 'react';
+import {
+  Text,
+  TextInput,
+  StyleSheet,
+  KeyboardTypeOptions,
+  StyleProp,
+  ViewStyle,
+  View,
+} from 'react-native';
+import { useTheme } from '../theme/colors';
+import { typography } from '../theme/typography';
+import { radius } from '../theme/radius';
+import { spacing } from '../theme/spacing';
+
+interface InputProps {
+  /** Label descriptivo arriba del campo (opcional). */
+  label?: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  keyboardType?: KeyboardTypeOptions;
+  /** Estilos adicionales para el contenedor. */
+  style?: StyleProp<ViewStyle>;
+}
+
+/**
+ * Campo de texto estilo iOS: fondo "fill" redondeado sin borde,
+ * label semibold arriba del campo.
+ */
+export default function Input({ label, value, onChangeText, placeholder, keyboardType, style }: InputProps) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
+
+  return (
+    <View style={style}>
+      {label && <Text style={s.label}>{label}</Text>}
+      <TextInput
+        style={s.input}
+        value={value}
+        onChangeText={onChangeText}
+        keyboardType={keyboardType}
+        placeholder={placeholder}
+        placeholderTextColor={colors.tertiaryLabel}
+      />
+    </View>
+  );
+}
+
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
+  StyleSheet.create({
+    label: {
+      ...typography.subheadline,
+      fontWeight: '600',
+      color: colors.secondaryLabel,
+      marginBottom: spacing.sm,
+      marginTop: spacing.md,
+    },
+    input: {
+      backgroundColor: colors.fill,
+      color: colors.label,
+      ...typography.body,
+      height: 44,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.sm,
+    },
+  });
