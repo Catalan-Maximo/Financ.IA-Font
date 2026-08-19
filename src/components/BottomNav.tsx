@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { colors } from '../theme/colors';
 
 /** Pestañas disponibles en la navegación inferior. */
 export type TabKey = 'dashboard' | 'simulador' | 'asesor';
@@ -49,9 +50,9 @@ export default function BottomNav({ activeTab, onChange }: BottomNavProps) {
 const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
-    backgroundColor: '#202024',
+    backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#323238',
+    borderTopColor: colors.border,
     paddingTop: 8,
     paddingBottom: 20, // espacio extra para el home indicator del celular
   },
@@ -61,13 +62,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   icono: { fontSize: 20 },
-  label: { color: '#8D8D99', fontSize: 11, fontWeight: '600' },
-  labelActiva: { color: '#00B37E' },
+  label: { color: colors.textMuted, fontSize: 11, fontWeight: '600' },
+  labelActiva: { color: colors.primary },
   indicador: {
     width: 24,
     height: 3,
     borderRadius: 2,
-    backgroundColor: '#00B37E',
+    backgroundColor: colors.primary,
     marginTop: 2,
   },
 });

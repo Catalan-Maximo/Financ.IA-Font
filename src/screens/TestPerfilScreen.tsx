@@ -1,51 +1,29 @@
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View, Alert, ActivityIndicator } from 'react-native';
-import api from '../services/api';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Button from '../components/Button';
+import useTestPerfil from '../hooks/useTestPerfil';
+import { colors } from '../theme/colors';
 
 interface TestPerfilProps {
   onTestComplete: (perfil: string) => void;
 }
 
 export default function TestPerfilScreen({ onTestComplete }: TestPerfilProps) {
-  const [loading, setLoading] = useState(false);
+  const { loading, aviso, limpiarAviso, finalizarTest } = useTestPerfil(onTestComplete);
 
-  const finalizarTest = async (opcionSeleccionada: string) => {
-    setLoading(true);
-    let perfilCalculado = "Moderado";
-
-    if (opcionSeleccionada === 'A') perfilCalculado = "Conservador";
-    if (opcionSeleccionada === 'C') perfilCalculado = "Agresivo";
-
-    try {
-      // Mandamos los datos al backend (Endpoint 2)
-      const response = await api.post('/usuarios/perfil', {
-        nombre: "Usuario Demo",
-        email: "demo@financia.com",
-        perfilInversor: perfilCalculado
-      });
-
-      Alert.alert('¡Test Completado! 🎉', `Tu perfil asignado es: ${response.data.perfilInversor}`);
-      onTestComplete(response.data.perfilInversor);
-    } catch (error) {
-      console.error(error);
-      // Fallback: avanzamos con el perfil calculado localmente
-      Alert.alert(
-        'Modo Offline ⚠️',
-        `No se pudo conectar al backend, pero tu perfil fue asignado localmente como: ${perfilCalculado}`,
-      );
-      onTestComplete(perfilCalculado);
-    } finally {
-      setLoading(false);
+  // El aviso (éxito u offline) se muestra como alert cuando el hook lo emite
+  useEffect(() => {
+    if (aviso) {
+      Alert.alert(aviso.titulo, aviso.mensaje, [{ text: 'OK', onPress: limpiarAviso }]);
     }
-  };
+  }, [aviso, limpiarAviso]);
 
   if (loading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color="#00B37E" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -92,9 +70,9 @@ export default function TestPerfilScreen({ onTestComplete }: TestPerfilProps) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121214', justifyContent: 'center', padding: 20 },
+  container: { flex: 1, backgroundColor: colors.background, justifyContent: 'center', padding: 20 },
   stepLabel: { marginBottom: 10 },
   question: { marginBottom: 30 },
   optionsContainer: { gap: 15 },
-  optionText: { color: '#C4C4CC', fontSize: 15, lineHeight: 22, textAlign: 'left' },
+  optionText: { color: colors.textSecondary, fontSize: 15, lineHeight: 22, textAlign: 'left' },
 });
