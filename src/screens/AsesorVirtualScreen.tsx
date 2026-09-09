@@ -21,6 +21,7 @@ import Screen from '../components/Screen';
 import Entrada from '../components/Entrada';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import useAsesorIA from '../hooks/useAsesorIA';
+import useCripto from '../hooks/useCripto';
 import type { Asignacion } from '../domain/ia';
 import { useTheme, type ThemeColors } from '../theme/colors';
 import { typography } from '../theme/typography';
@@ -35,6 +36,13 @@ const RIESGO_TONE: Record<string, 'success' | 'warning' | 'danger'> = {
   Bajo: 'success',
   Medio: 'warning',
   Alto: 'danger',
+};
+
+/** Tono del chip según veredicto cripto. */
+const CRIPTO_TONE: Record<string, 'success' | 'warning' | 'danger'> = {
+  BUY: 'success',
+  WATCH: 'warning',
+  AVOID: 'danger',
 };
 
 /** Barra de distribución con ancho animado (stagger por índice). */
@@ -91,6 +99,8 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
     error, limpiarError,
     consultar,
   } = useAsesorIA(perfil);
+
+  const { cripto } = useCripto();
 
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -205,6 +215,19 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
 
               <Text style={s.recomendacionTexto}>{respuesta.recomendacion}</Text>
 
+              {/* Veredicto cripto del día (análisis técnico) */}
+              {cripto.length > 0 && (
+                <View style={s.criptoFila}>
+                  {cripto.map((c) => (
+                    <Badge
+                      key={c.simbolo}
+                      label={`${c.simbolo.replace('USDT', '')}: ${c.veredicto}`}
+                      tone={CRIPTO_TONE[c.veredicto] ?? 'warning'}
+                    />
+                  ))}
+                </View>
+              )}
+
               <View style={s.separator} />
               <View style={s.row}>
                 <Text style={s.label}>Ganancia real estimada</Text>
@@ -254,6 +277,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     riesgoCard: { marginBottom: spacing.xl },
     riesgoBadge: { alignSelf: 'flex-start', marginBottom: spacing.lg },
     recomendacionTexto: { ...typography.callout, color: colors.label },
+    criptoFila: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg, flexWrap: 'wrap' },
 
     separator: {
       height: StyleSheet.hairlineWidth,
