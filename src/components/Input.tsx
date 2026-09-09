@@ -20,6 +20,8 @@ interface InputProps {
   onChangeText: (text: string) => void;
   placeholder?: string;
   keyboardType?: KeyboardTypeOptions;
+  /** Oculta el texto (para contraseñas). */
+  secureTextEntry?: boolean;
   /** Estilos adicionales para el contenedor. */
   style?: StyleProp<ViewStyle>;
 }
@@ -28,7 +30,7 @@ interface InputProps {
  * Campo de texto estilo iOS: fondo "fill" redondeado sin borde,
  * label semibold arriba del campo.
  */
-export default function Input({ label, value, onChangeText, placeholder, keyboardType, style }: InputProps) {
+export default function Input({ label, value, onChangeText, placeholder, keyboardType, secureTextEntry, style }: InputProps) {
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
@@ -40,6 +42,8 @@ export default function Input({ label, value, onChangeText, placeholder, keyboar
         value={value}
         onChangeText={onChangeText}
         keyboardType={keyboardType}
+        secureTextEntry={secureTextEntry}
+        autoCapitalize="none"
         placeholder={placeholder}
         placeholderTextColor={colors.tertiaryLabel}
       />

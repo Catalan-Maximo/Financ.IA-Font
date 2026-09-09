@@ -28,13 +28,15 @@ interface PanelPerfilProps {
   onClose: () => void;
   /** Rehacer el test del inversor (cierra sesión del perfil). */
   onRehacerTest: () => void;
+  /** Cerrar sesión (borra token y vuelve al login). */
+  onLogout: () => void;
 }
 
 /**
  * Panel deslizante desde la derecha (estilo iOS) con los datos del
  * usuario: perfil, toggle de modo oscuro y reinicio del test.
  */
-export default function PanelPerfil({ visible, perfil, onClose, onRehacerTest }: PanelPerfilProps) {
+export default function PanelPerfil({ visible, perfil, onClose, onRehacerTest, onLogout }: PanelPerfilProps) {
   const { colors, dark, setMode } = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -109,6 +111,17 @@ export default function PanelPerfil({ visible, perfil, onClose, onRehacerTest }:
           <View style={s.filaIzq}>
             <Ionicons name="refresh" size={22} color={colors.systemRed} />
             <Text style={[s.filaTexto, s.filaTextoPeligro]}>Rehacer test del inversor</Text>
+          </View>
+        </Pressable>
+
+        {/* Cierre de sesión */}
+        <Pressable
+          style={({ pressed }) => [s.fila, pressed && s.filaPressed]}
+          onPress={onLogout}
+        >
+          <View style={s.filaIzq}>
+            <Ionicons name="log-out-outline" size={22} color={colors.systemRed} />
+            <Text style={[s.filaTexto, s.filaTextoPeligro]}>Cerrar sesión</Text>
           </View>
         </Pressable>
       </Animated.View>

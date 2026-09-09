@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
+import { borrarToken, obtenerToken } from './storage';
 
 // Auto-detecta la IP de la Mac donde corre Expo (y el backend).
 // El celular se conecta al servidor de Expo por esa IP, así que
@@ -15,5 +16,25 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Adjunta el JWT en cada petición
+api.interceptors.request.use(async (config) => {
+  const token = await obtenerToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Token vencido o inválido → limpiamos la sesión local
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      await borrarToken();
+    }
+    return Promise.reject(error);
+  },
+);
 
 export default api;
