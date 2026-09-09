@@ -44,6 +44,36 @@ const PREGUNTAS = [
     pregunta: '¿Cómo rehago el test del inversor?',
     respuesta: 'Abrí el menú (☰) y tocá "Rehacer test del inversor".',
   },
+  {
+    pregunta: '¿Qué significan BUY, WATCH y AVOID en cripto?',
+    respuesta:
+      'Es el veredicto de nuestro análisis técnico diario: BUY = la mayoría de las señales dan para comprar, WATCH = esperar y observar, AVOID = mejor mantenerse afuera. Nunca es una garantía: la cripto es muy volátil.',
+  },
+  {
+    pregunta: '¿Qué es el RSI?',
+    respuesta:
+      'Es un indicador de 0 a 100 que mide si un activo está "sobrecomprado" (por encima de 70, puede venir una corrección) o "sobrevendido" (por debajo de 30, posible rebote). Entre 30 y 70 se considera zona neutral.',
+  },
+  {
+    pregunta: '¿Qué son el soporte y la resistencia?',
+    respuesta:
+      'El soporte es el precio mínimo de los últimos 20 días (donde suele frenarse una caída) y la resistencia el máximo (donde suele frenarse una suba). Comprar cerca del soporte suele ser un mejor momento de entrada.',
+  },
+  {
+    pregunta: '¿Qué es la tendencia SMA50/SMA200?',
+    respuesta:
+      'Son promedios móviles del precio: de 50 y de 200 días. Si el promedio corto (50) está por encima del largo (200), la tendencia es alcista; si está por debajo, es bajista.',
+  },
+  {
+    pregunta: '¿Cómo me avisan cuándo comprar o vender cripto?',
+    respuesta:
+      'Analizamos el mercado todos los días a las 8:15. Si el veredicto de Bitcoin o Ethereum cambia, te mandamos una notificación (por ejemplo: "BTC cambió de WATCH a BUY — señal de compra").',
+  },
+  {
+    pregunta: '¿Es seguro invertir en cripto?',
+    respuesta:
+      'Las criptomonedas son muy volátiles: pueden bajar 20% o más en pocos días. El análisis técnico es informativo y no garantiza resultados. Invertí solo lo que estés dispuesto a perder.',
+  },
 ];
 
 interface FaqSheetProps {

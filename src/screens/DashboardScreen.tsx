@@ -1,13 +1,16 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, Text, View, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Screen from '../components/Screen';
+import CryptoCard from '../components/CryptoCard';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import useMercado from '../hooks/useMercado';
+import useCripto from '../hooks/useCripto';
 import type { Activo } from '../domain/activo';
+import type { CriptoEstado } from '../domain/cripto';
 import { useTheme } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
@@ -17,10 +20,12 @@ interface DashboardProps {
   perfil: string;
   onIrAlSimulador: () => void;
   onIrAlAsesor: () => void;
+  onAbrirDetalleCripto: (estado: CriptoEstado) => void;
 }
 
-export default function DashboardScreen({ perfil, onIrAlSimulador, onIrAlAsesor }: DashboardProps) {
+export default function DashboardScreen({ perfil, onIrAlSimulador, onIrAlAsesor, onAbrirDetalleCripto }: DashboardProps) {
   const { activos, loading, error, limpiarError } = useMercado();
+  const { cripto, alertas } = useCripto();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const s = useMemo(() => makeStyles(colors), [colors]);
@@ -34,6 +39,15 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onIrAlAsesor 
       );
     }
   }, [error, limpiarError]);
+
+  // Señales cripto: avisamos una sola vez por sesión (no en cada remount)
+  const senalesAvisadas = useRef(false);
+  useEffect(() => {
+    if (alertas.length > 0 && !senalesAvisadas.current) {
+      senalesAvisadas.current = true;
+      Alert.alert('🔔 Señales cripto', alertas.map((a) => a.mensaje).join('\n\n'));
+    }
+  }, [alertas]);
 
   const renderActivo = ({ item }: { item: Activo }) => {
     // Cálculo rápido simulado: Tasa Mensual menos Inflación Estimada
@@ -70,8 +84,6 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onIrAlAsesor 
 
   return (
     <Screen safeTop={false}>
-      <Header text="Rendimientos del Mercado Actual" level="section" style={s.sectionSpacing} />
-
       <FlatList
         data={activos}
         keyExtractor={(_, index) => index.toString()}
@@ -82,6 +94,23 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onIrAlAsesor 
           paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.xxl,
         }}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <View>
+            {cripto.length > 0 && (
+              <>
+                <Header text="Cripto" level="section" style={s.sectionSpacing} />
+                {cripto.map((estado) => (
+                  <CryptoCard
+                    key={estado.simbolo}
+                    estado={estado}
+                    onPress={() => onAbrirDetalleCripto(estado)}
+                  />
+                ))}
+              </>
+            )}
+            <Header text="Rendimientos del Mercado Actual" level="section" style={s.sectionSpacing} />
+          </View>
+        }
         ListFooterComponent={
           <View style={s.footer}>
             <Button

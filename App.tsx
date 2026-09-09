@@ -8,6 +8,7 @@ import SimuladorScreen from './src/screens/SimuladorScreen';
 import AsesorVirtualScreen from './src/screens/AsesorVirtualScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
+import CriptoDetalleScreen from './src/screens/CriptoDetalleScreen';
 import BottomNav, { TabKey } from './src/components/BottomNav';
 import Entrada from './src/components/Entrada';
 import PanelPerfil from './src/components/PanelPerfil';
@@ -16,7 +17,9 @@ import TopBar from './src/components/TopBar';
 import usePerfilGuardado from './src/hooks/usePerfilGuardado';
 import { useAuth } from './src/hooks/AuthContext';
 import { borrarPerfil } from './src/lib/storage';
+import { registrarNotificaciones } from './src/lib/notificaciones';
 import { useTheme } from './src/theme/colors';
+import type { CriptoEstado } from './src/domain/cripto';
 
 export default function App() {
   const [perfilUsuario, setPerfilUsuario] = useState<string>('Moderado');
@@ -25,6 +28,7 @@ export default function App() {
   const [panelAbierto, setPanelAbierto] = useState(false);
   const [faqAbierto, setFaqAbierto] = useState(false);
   const [modoAuth, setModoAuth] = useState<'login' | 'register'>('login');
+  const [criptoDetalle, setCriptoDetalle] = useState<CriptoEstado | null>(null);
   const { token, perfilInversor, cargando: cargandoAuth, logout } = useAuth();
   const { perfilGuardado, cargando: cargandoPerfil } = usePerfilGuardado();
   const { colors } = useTheme();
@@ -70,6 +74,13 @@ export default function App() {
     }
   }, [perfilInversor]);
 
+  // Registrar notificaciones push una vez logueado
+  useEffect(() => {
+    if (token) {
+      registrarNotificaciones();
+    }
+  }, [token]);
+
   const renderPantalla = () => {
     switch (activeTab) {
       case 'simulador':
@@ -82,10 +93,21 @@ export default function App() {
             perfil={perfilUsuario}
             onIrAlSimulador={() => setActiveTab('simulador')}
             onIrAlAsesor={() => setActiveTab('asesor')}
+            onAbrirDetalleCripto={setCriptoDetalle}
           />
         );
     }
   };
+
+  // Detalle de cripto: pantalla completa encima del flujo con pestañas
+  if (criptoDetalle) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="auto" />
+        <CriptoDetalleScreen estado={criptoDetalle} onVolver={() => setCriptoDetalle(null)} />
+      </SafeAreaProvider>
+    );
+  }
 
   // Splash de arranque mientras leemos el storage (token + perfil)
   if (cargandoAuth || cargandoPerfil) {
