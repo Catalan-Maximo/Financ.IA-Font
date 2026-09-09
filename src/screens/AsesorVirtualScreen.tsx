@@ -1,24 +1,85 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   StyleSheet,
   View,
   Text,
-  TextInput,
   ScrollView,
   ActivityIndicator,
   Alert,
+  Platform,
+  Animated,
+  Easing,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Button from '../components/Button';
+import Input from '../components/Input';
+import Badge from '../components/Badge';
+import Screen from '../components/Screen';
+import Entrada from '../components/Entrada';
+import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import useAsesorIA from '../hooks/useAsesorIA';
 import type { Asignacion } from '../domain/ia';
-import { colors } from '../theme/colors';
-import { RIESGO_ESTILOS } from '../constants';
+import { useTheme, type ThemeColors } from '../theme/colors';
+import { typography } from '../theme/typography';
+import { spacing } from '../theme/spacing';
 
 interface AsesorVirtualProps {
   perfil: string;
 }
+
+/** Tono del badge según nivel de riesgo. */
+const RIESGO_TONE: Record<string, 'success' | 'warning' | 'danger'> = {
+  Bajo: 'success',
+  Medio: 'warning',
+  Alto: 'danger',
+};
+
+/** Barra de distribución con ancho animado (stagger por índice). */
+function BarraDistribucion({ porcentaje, index }: { porcentaje: number; index: number }) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeBarStyles(colors), [colors]);
+
+  const [trackWidth, setTrackWidth] = useState(0);
+  const width = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (trackWidth > 0) {
+      width.setValue(0);
+      Animated.timing(width, {
+        toValue: (porcentaje / 100) * trackWidth,
+        duration: 600,
+        easing: Easing.out(Easing.cubic),
+        delay: index * 80,
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [index, porcentaje, trackWidth, width]);
+
+  return (
+    <View style={s.track} onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}>
+      <Animated.View style={[s.fill, { width }]} />
+    </View>
+  );
+}
+
+const makeBarStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    track: {
+      height: 8,
+      backgroundColor: colors.tertiarySystemBackground,
+      borderRadius: 4,
+      overflow: 'hidden',
+      marginBottom: spacing.md,
+    },
+    fill: {
+      height: '100%',
+      backgroundColor: colors.brand,
+      borderRadius: 4,
+    },
+  });
 
 export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
   const {
@@ -31,219 +92,191 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
     consultar,
   } = useAsesorIA(perfil);
 
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const s = useMemo(() => makeStyles(colors), [colors]);
+
+  // Key de resultados: remonta el bloque y dispara la animación de entrada
+  const [respuestaKey, setRespuestaKey] = useState(0);
+
   useEffect(() => {
     if (error) {
       Alert.alert('Error', error, [{ text: 'OK', onPress: limpiarError }]);
     }
   }, [error, limpiarError]);
 
+  // Haptic de éxito cuando llega la respuesta del asesor
+  useEffect(() => {
+    if (respuesta) {
+      setRespuestaKey((k) => k + 1);
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    }
+  }, [respuesta]);
+
   const formatPesos = (valor: number) =>
     `$${valor.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  const riesgoEstilo = respuesta
-    ? RIESGO_ESTILOS[respuesta.nivelRiesgo] ?? RIESGO_ESTILOS.Medio
-    : RIESGO_ESTILOS.Medio;
+  const ejecutarConsulta = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    consultar();
+  };
 
   const renderAsignacion = (asignacion: Asignacion, index: number) => (
-    <Card key={index} style={styles.asignacionCard}>
-      <View style={styles.asignacionHeader}>
-        <Text style={styles.asignacionTipo}>{asignacion.tipoActivo}</Text>
-        <Text style={styles.asignacionPorcentaje}>{asignacion.porcentaje}%</Text>
+    <Card
+      key={index}
+      style={s.asignacionCard}
+    >
+      <View style={s.asignacionHeader}>
+        <Text style={s.asignacionTipo}>{asignacion.tipoActivo}</Text>
+        <Text style={s.asignacionPorcentaje}>{asignacion.porcentaje}%</Text>
       </View>
-      <View style={styles.progressTrack}>
-        <View
-          style={[
-            styles.progressFill,
-            { width: `${asignacion.porcentaje}%` },
-          ]}
-        />
-      </View>
-      <Text style={styles.asignacionMotivo}>{asignacion.motivo}</Text>
+      <BarraDistribucion porcentaje={asignacion.porcentaje} index={index} />
+      <Text style={s.asignacionMotivo}>{asignacion.motivo}</Text>
     </Card>
   );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.topBar}>
-        <View style={styles.perfilBadge}>
-          <Text style={styles.perfilText}>Perfil: {perfil}</Text>
-        </View>
-      </View>
+    <Screen safeTop={false}>
+      <ScrollView
+        style={s.scroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingTop: spacing.lg,
+          paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.xxl,
+        }}
+      >
+        <Header text="Asesor Virtual" level="title" style={s.titleSpacing} />
+        <Text style={s.subtitle}>Recibí una estrategia personalizada según tu perfil</Text>
 
-      <Header text="🤖 Asesor Virtual" level="title" style={styles.titleSpacing} />
-      <Header
-        text="Recibí una estrategia personalizada según tu perfil"
-        level="section"
-        style={styles.subtitleSpacing}
-      />
-
-      {/* ── Formulario ─── */}
-      <Card style={styles.formCard}>
-        <Text style={styles.inputLabel}>💰 Monto a invertir ($)</Text>
-        <TextInput
-          style={styles.input}
-          value={monto}
-          onChangeText={setMonto}
-          keyboardType="numeric"
-          placeholder="100000"
-          placeholderTextColor={colors.textFaint}
-        />
-
-        <Text style={styles.inputLabel}>📅 Plazo (meses)</Text>
-        <TextInput
-          style={styles.input}
-          value={plazo}
-          onChangeText={setPlazo}
-          keyboardType="numeric"
-          placeholder="6"
-          placeholderTextColor={colors.textFaint}
-        />
-
-        <Text style={styles.inputLabel}>📈 Inflación mensual estimada (%)</Text>
-        <TextInput
-          style={styles.input}
-          value={inflacion}
-          onChangeText={setInflacion}
-          keyboardType="numeric"
-          placeholder="4.0"
-          placeholderTextColor={colors.textFaint}
-        />
-
-        <Button
-          title="Consultar Asesor"
-          onPress={consultar}
-          loading={loading}
-          style={styles.consultarBtn}
-        />
-      </Card>
-
-      {/* ── Resultados ─── */}
-      {loading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      )}
-
-      {respuesta && !loading && (
-        <View style={styles.resultados}>
-          {/* Insignia de riesgo */}
-          <Card style={styles.riesgoCard}>
-            <View style={[styles.riesgoBadge, { backgroundColor: riesgoEstilo.bg }]}>
-              <Text style={[styles.riesgoBadgeText, { color: riesgoEstilo.texto }]}>
-                Riesgo: {respuesta.nivelRiesgo}
-              </Text>
-            </View>
-
-            {/* Recomendación */}
-            <Text style={styles.recomendacionTexto}>{respuesta.recomendacion}</Text>
-
-            {/* Ganancia estimada */}
-            <View style={styles.separator} />
-            <View style={styles.row}>
-              <Text style={styles.label}>Ganancia real estimada</Text>
-              <Text
-                style={[
-                  styles.gananciaTexto,
-                  respuesta.gananciaRealEstimada > 0 ? styles.green : styles.red,
-                ]}
-              >
-                {formatPesos(respuesta.gananciaRealEstimada)}
-              </Text>
-            </View>
-          </Card>
-
-          {/* Distribución sugerida */}
-          <Header
-            text="📊 Distribución Sugerida"
-            level="section"
-            style={styles.resultHeader}
+        {/* ── Formulario ─── */}
+        <Card style={s.formCard}>
+          <Input
+            label="Monto a invertir ($)"
+            value={monto}
+            onChangeText={setMonto}
+            keyboardType="numeric"
+            placeholder="100000"
           />
-          {respuesta.distribucionSugerida.map(renderAsignacion)}
+          <Input
+            label="Plazo (meses)"
+            value={plazo}
+            onChangeText={setPlazo}
+            keyboardType="numeric"
+            placeholder="6"
+          />
+          <Input
+            label="Inflación mensual estimada (%)"
+            value={inflacion}
+            onChangeText={setInflacion}
+            keyboardType="numeric"
+            placeholder="4.0"
+          />
 
-          {/* Resumen de estrategia */}
-          <Card style={styles.resumenCard}>
-            <Header text="🎯 Resumen de Estrategia" level="section" style={styles.resumenTitulo} />
-            <Text style={styles.resumenTexto}>{respuesta.resumenEstrategia}</Text>
-          </Card>
-        </View>
-      )}
-    </ScrollView>
+          <Button
+            title="Consultar Asesor"
+            icon="sparkles-outline"
+            onPress={ejecutarConsulta}
+            haptics
+            loading={loading}
+            style={s.consultarBtn}
+          />
+        </Card>
+
+        {/* ── Resultados ─── */}
+        {loading && (
+          <View style={s.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.brand} />
+          </View>
+        )}
+
+        {respuesta && !loading && (
+          <Entrada key={respuestaKey} style={s.resultados}>
+            {/* Insignia de riesgo y recomendación */}
+            <Card style={s.riesgoCard}>
+              <Badge
+                label={`Riesgo: ${respuesta.nivelRiesgo}`}
+                tone={RIESGO_TONE[respuesta.nivelRiesgo] ?? 'warning'}
+                style={s.riesgoBadge}
+              />
+
+              <Text style={s.recomendacionTexto}>{respuesta.recomendacion}</Text>
+
+              <View style={s.separator} />
+              <View style={s.row}>
+                <Text style={s.label}>Ganancia real estimada</Text>
+                <Text
+                  style={[
+                    s.gananciaTexto,
+                    respuesta.gananciaRealEstimada > 0 ? s.green : s.red,
+                  ]}
+                >
+                  {formatPesos(respuesta.gananciaRealEstimada)}
+                </Text>
+              </View>
+            </Card>
+
+            {/* Distribución sugerida */}
+            <Header text="Distribución Sugerida" level="section" style={s.resultHeader} />
+            {respuesta.distribucionSugerida.map(renderAsignacion)}
+
+            {/* Resumen de estrategia */}
+            <Card style={s.resumenCard}>
+              <Header text="Resumen de Estrategia" level="section" style={s.resumenTitulo} />
+              <Text style={s.resumenTexto}>{respuesta.resumenEstrategia}</Text>
+            </Card>
+          </Entrada>
+        )}
+      </ScrollView>
+    </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: 20, paddingTop: 60, paddingBottom: 40 },
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
+  StyleSheet.create({
+    scroll: { flex: 1 },
 
-  /* ── Top Bar ─── */
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  perfilBadge: { backgroundColor: colors.badgeBg, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 20 },
-  perfilText: { color: colors.primary, fontWeight: 'bold', fontSize: 12 },
+    /* ── Títulos ─── */
+    titleSpacing: { marginBottom: spacing.sm },
+    subtitle: { ...typography.body, color: colors.secondaryLabel, marginBottom: spacing.xl },
 
-  /* ── Títulos ─── */
-  titleSpacing: { marginBottom: 6 },
-  subtitleSpacing: { marginBottom: 20 },
+    /* ── Formulario ─── */
+    formCard: { marginBottom: spacing.xl },
+    consultarBtn: { marginTop: spacing.xl },
 
-  /* ── Formulario ─── */
-  formCard: { marginBottom: 20 },
-  inputLabel: { color: colors.textPrimary, fontSize: 14, fontWeight: '600', marginBottom: 6, marginTop: 12 },
-  input: {
-    backgroundColor: colors.background,
-    color: colors.text,
-    fontSize: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  consultarBtn: { marginTop: 20 },
+    /* ── Resultados ─── */
+    loadingContainer: { marginTop: spacing.xxxl, alignItems: 'center' },
+    resultados: { marginTop: spacing.md },
 
-  /* ── Resultados ─── */
-  loadingContainer: { marginTop: 30, alignItems: 'center' },
-  resultados: { marginTop: 10 },
+    riesgoCard: { marginBottom: spacing.xl },
+    riesgoBadge: { alignSelf: 'flex-start', marginBottom: spacing.lg },
+    recomendacionTexto: { ...typography.callout, color: colors.label },
 
-  riesgoCard: { marginBottom: 20 },
-  riesgoBadge: {
-    alignSelf: 'flex-start',
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    marginBottom: 14,
-  },
-  riesgoBadgeText: { fontWeight: 'bold', fontSize: 13 },
-  recomendacionTexto: { color: colors.textPrimary, fontSize: 14, lineHeight: 22 },
+    separator: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: colors.separator,
+      marginVertical: spacing.lg,
+    },
 
-  separator: { height: 1, backgroundColor: colors.border, marginVertical: 14 },
+    row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    label: { ...typography.footnote, color: colors.secondaryLabel },
+    gananciaTexto: { ...typography.callout, fontWeight: '700' },
+    green: { color: colors.systemGreen },
+    red: { color: colors.systemRed },
 
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  label: { color: colors.textSecondary, fontSize: 13 },
-  gananciaTexto: { fontSize: 16, fontWeight: 'bold' },
-  green: { color: colors.primary },
-  red: { color: colors.danger },
+    /* ── Distribución ─── */
+    resultHeader: { marginBottom: spacing.lg },
+    asignacionCard: { marginBottom: spacing.md },
+    asignacionHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md },
+    asignacionTipo: { ...typography.subheadline, fontWeight: '600', color: colors.label },
+    asignacionPorcentaje: { ...typography.callout, fontWeight: '700', color: colors.brand },
+    asignacionMotivo: { ...typography.footnote, color: colors.secondaryLabel },
 
-  /* ── Distribución ─── */
-  resultHeader: { marginBottom: 15 },
-  asignacionCard: { marginBottom: 12, padding: 16 },
-  asignacionHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  asignacionTipo: { color: colors.text, fontSize: 15, fontWeight: 'bold' },
-  asignacionPorcentaje: { color: colors.primary, fontSize: 16, fontWeight: 'bold' },
-  progressTrack: {
-    height: 8,
-    backgroundColor: colors.surfaceLight,
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginBottom: 10,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: 4,
-  },
-  asignacionMotivo: { color: colors.textMuted, fontSize: 12, lineHeight: 18 },
-
-  /* ── Resumen ─── */
-  resumenCard: { marginTop: 8, padding: 16 },
-  resumenTitulo: { marginBottom: 10 },
-  resumenTexto: { color: colors.textSecondary, fontSize: 13, lineHeight: 20 },
-});
+    /* ── Resumen ─── */
+    resumenCard: { marginTop: spacing.sm },
+    resumenTitulo: { marginBottom: spacing.md },
+    resumenTexto: { ...typography.footnote, color: colors.secondaryLabel },
+  });

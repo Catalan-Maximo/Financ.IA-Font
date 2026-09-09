@@ -1,10 +1,14 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { StyleSheet, View, Text, ScrollView, Alert, ActivityIndicator, Platform, Animated, Easing } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import Header from '../components/Header';
 import Card from '../components/Card';
-import Button from '../components/Button';
+import Screen from '../components/Screen';
+import Entrada from '../components/Entrada';
 import useTestPerfil from '../hooks/useTestPerfil';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/colors';
+import { typography } from '../theme/typography';
+import { spacing } from '../theme/spacing';
 
 interface TestPerfilProps {
   onTestComplete: (perfil: string) => void;
@@ -21,6 +25,9 @@ export default function TestPerfilScreen({ onTestComplete }: TestPerfilProps) {
     responder,
   } = useTestPerfil(onTestComplete);
 
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
+
   // El aviso (éxito u offline) se muestra como alert cuando el hook lo emite
   useEffect(() => {
     if (aviso) {
@@ -28,39 +35,86 @@ export default function TestPerfilScreen({ onTestComplete }: TestPerfilProps) {
     }
   }, [aviso, limpiarAviso]);
 
+  // Barra de progreso animada (ancho real medido del track)
+  const [trackWidth, setTrackWidth] = useState(0);
+  const progreso = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (trackWidth > 0) {
+      Animated.timing(progreso, {
+        toValue: ((indice + 1) / totalPreguntas) * trackWidth,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [indice, progreso, totalPreguntas, trackWidth]);
+
+  const elegir = (puntos: number) => {
+    if (Platform.OS !== 'web') {
+      Haptics.selectionAsync();
+    }
+    responder(puntos);
+  };
+
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      <Screen style={s.loading}>
+        <ActivityIndicator size="large" color={colors.brand} />
+      </Screen>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Header text={`Paso ${indice + 1} de ${totalPreguntas}`} level="label" style={styles.stepLabel} />
-      <Header text={preguntaActual.texto} level="subtitle" style={styles.question} />
+    <Screen>
+      <Header
+        text={`Paso ${indice + 1} de ${totalPreguntas}`}
+        level="label"
+        style={s.stepLabel}
+      />
+      <View
+        style={s.track}
+        onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+      >
+        <Animated.View style={[s.fill, { width: progreso }]} />
+      </View>
 
-      <ScrollView contentContainerStyle={styles.optionsContainer}>
-        {preguntaActual.opciones.map((opcion) => (
-          <Card key={opcion.letra}>
-            <Button
-              title={`${opcion.letra}) ${opcion.texto}`}
-              onPress={() => responder(opcion.puntos)}
-              variant="secondary"
-              textStyle={styles.optionText}
-            />
-          </Card>
-        ))}
+      <ScrollView contentContainerStyle={s.optionsContainer} showsVerticalScrollIndicator={false}>
+        <Entrada key={indice}>
+          <Header text={preguntaActual.texto} level="subtitle" style={s.question} />
+
+          {preguntaActual.opciones.map((opcion) => (
+            <Card key={opcion.letra} onPress={() => elegir(opcion.puntos)} style={s.optionCard}>
+              <Text style={s.optionText}>{opcion.letra}) {opcion.texto}</Text>
+            </Card>
+          ))}
+        </Entrada>
       </ScrollView>
-    </View>
+    </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, padding: 20, paddingTop: 60 },
-  stepLabel: { marginBottom: 10 },
-  question: { marginBottom: 30 },
-  optionsContainer: { gap: 15, paddingBottom: 40 },
-  optionText: { color: colors.textSecondary, fontSize: 15, lineHeight: 22, textAlign: 'left' },
-});
+const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
+  StyleSheet.create({
+    loading: { alignItems: 'center', justifyContent: 'center' },
+    stepLabel: { marginBottom: spacing.sm },
+    track: {
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.tertiarySystemBackground,
+      marginBottom: spacing.xl,
+      overflow: 'hidden',
+    },
+    fill: {
+      height: '100%',
+      backgroundColor: colors.brand,
+      borderRadius: 2,
+    },
+    question: { marginBottom: spacing.xxxl },
+    optionsContainer: { gap: spacing.lg, paddingBottom: 40 },
+    optionCard: { padding: spacing.lg },
+    optionText: {
+      ...typography.body,
+      color: colors.label,
+      textAlign: 'left',
+    },
+  });
