@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CLAVE_PERFIL = '@financia/perfil';
 const CLAVE_TEMA = '@financia/tema';
+const CLAVE_TOKEN = '@financia/token';
 
 /** Guarda el perfil del inversor localmente. */
 export async function guardarPerfil(perfil: string): Promise<void> {
@@ -32,4 +33,19 @@ export async function guardarTema(tema: string): Promise<void> {
 /** Devuelve el modo de tema guardado, o null si nunca se eligió. */
 export async function obtenerTema(): Promise<string | null> {
   return AsyncStorage.getItem(CLAVE_TEMA);
+}
+
+/** Guarda el token JWT de la sesión. */
+export async function guardarToken(token: string): Promise<void> {
+  await AsyncStorage.setItem(CLAVE_TOKEN, token);
+}
+
+/** Devuelve el token JWT guardado, o null si no hay sesión. */
+export async function obtenerToken(): Promise<string | null> {
+  return AsyncStorage.getItem(CLAVE_TOKEN);
+}
+
+/** Borra el token (cerrar sesión). */
+export async function borrarToken(): Promise<void> {
+  await AsyncStorage.removeItem(CLAVE_TOKEN);
 }

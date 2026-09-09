@@ -6,12 +6,15 @@ import TestPerfilScreen from './src/screens/TestPerfilScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import SimuladorScreen from './src/screens/SimuladorScreen';
 import AsesorVirtualScreen from './src/screens/AsesorVirtualScreen';
+import LoginScreen from './src/screens/LoginScreen';
+import RegisterScreen from './src/screens/RegisterScreen';
 import BottomNav, { TabKey } from './src/components/BottomNav';
 import Entrada from './src/components/Entrada';
 import PanelPerfil from './src/components/PanelPerfil';
 import FaqSheet from './src/components/FaqSheet';
 import TopBar from './src/components/TopBar';
 import usePerfilGuardado from './src/hooks/usePerfilGuardado';
+import { useAuth } from './src/hooks/AuthContext';
 import { borrarPerfil } from './src/lib/storage';
 import { useTheme } from './src/theme/colors';
 
@@ -21,7 +24,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
   const [panelAbierto, setPanelAbierto] = useState(false);
   const [faqAbierto, setFaqAbierto] = useState(false);
-  const { perfilGuardado, cargando } = usePerfilGuardado();
+  const [modoAuth, setModoAuth] = useState<'login' | 'register'>('login');
+  const { token, perfilInversor, cargando: cargandoAuth, logout } = useAuth();
+  const { perfilGuardado, cargando: cargandoPerfil } = usePerfilGuardado();
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
@@ -38,6 +43,16 @@ export default function App() {
     setTestCompletado(false);
   };
 
+  // Cierra sesión: borra token y perfil, vuelve al login
+  const cerrarSesion = async () => {
+    await logout();
+    await borrarPerfil();
+    setPanelAbierto(false);
+    setActiveTab('dashboard');
+    setTestCompletado(false);
+    setPerfilUsuario('Moderado');
+  };
+
   // Si hay un perfil guardado de una sesión anterior, saltamos el test
   useEffect(() => {
     if (perfilGuardado) {
@@ -45,6 +60,15 @@ export default function App() {
       setTestCompletado(true);
     }
   }, [perfilGuardado]);
+
+  // Si el usuario logueado ya tiene perfil en el backend (vino en el login),
+  // saltamos el test — así no hay que rehacerlo en cada login
+  useEffect(() => {
+    if (perfilInversor) {
+      setPerfilUsuario(perfilInversor);
+      setTestCompletado(true);
+    }
+  }, [perfilInversor]);
 
   const renderPantalla = () => {
     switch (activeTab) {
@@ -63,14 +87,28 @@ export default function App() {
     }
   };
 
-  // Splash de arranque mientras leemos el storage
-  if (cargando) {
+  // Splash de arranque mientras leemos el storage (token + perfil)
+  if (cargandoAuth || cargandoPerfil) {
     return (
       <SafeAreaProvider>
         <StatusBar style="auto" />
         <View style={s.splash}>
           <ActivityIndicator size="large" color={colors.brand} />
         </View>
+      </SafeAreaProvider>
+    );
+  }
+
+  // Sin token → flujo de autenticación (login/registro)
+  if (!token) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="auto" />
+        {modoAuth === 'login' ? (
+          <LoginScreen onIrARegistro={() => setModoAuth('register')} />
+        ) : (
+          <RegisterScreen onIrALogin={() => setModoAuth('login')} />
+        )}
       </SafeAreaProvider>
     );
   }
@@ -103,6 +141,7 @@ export default function App() {
           perfil={perfilUsuario}
           onClose={() => setPanelAbierto(false)}
           onRehacerTest={rehacerTest}
+          onLogout={cerrarSesion}
         />
         <FaqSheet visible={faqAbierto} onClose={() => setFaqAbierto(false)} />
       </View>
