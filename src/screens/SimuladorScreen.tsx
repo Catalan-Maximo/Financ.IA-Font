@@ -86,7 +86,7 @@ export default function SimuladorScreen({ perfil }: SimuladorProps) {
 
         <View style={s.cardHeader}>
           <Text style={s.entidad}>{item.entidad}</Text>
-          <Text style={s.tipo}>{item.tipo}</Text>
+          <Text style={s.tipo}>{item.tipo} · Riesgo {item.riesgo}</Text>
         </View>
 
         <View style={s.separator} />
@@ -118,6 +118,15 @@ export default function SimuladorScreen({ perfil }: SimuladorProps) {
             {formatPesos(item.gananciaReal)}
           </Text>
         </View>
+
+        {item.peorEscenario != null && item.mejorEscenario != null && (
+          <View style={s.row}>
+            <Text style={s.label}>Rango estimado (90% conf.)</Text>
+            <Text style={s.value}>
+              {item.peorEscenario.toFixed(1)}% a +{item.mejorEscenario.toFixed(1)}%
+            </Text>
+          </View>
+        )}
 
         <View style={[s.indicador, item.leGanaALaInflacion ? s.indicadorGana : s.indicadorPierde]}>
           <Ionicons
@@ -207,6 +216,13 @@ export default function SimuladorScreen({ perfil }: SimuladorProps) {
             </Card>
 
             {resultado.rendimientos.map(renderRendimiento)}
+
+            <Text style={s.notaProyeccion}>
+              ⚠️ Acciones, ETFs y cripto se proyectan con una simulación Monte Carlo
+              (10.000 escenarios usando la volatilidad histórica de 3 meses). El rango estimado
+              cubre el 90% de los escenarios: hay un 5% de chances de que sea peor que el piso.
+              No es una garantía.
+            </Text>
           </Entrada>
         )}
       </ScrollView>
@@ -230,6 +246,12 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     loadingContainer: { marginTop: spacing.xxxl, alignItems: 'center' },
     resultados: { marginTop: spacing.md },
     resultHeader: { marginBottom: spacing.lg },
+    notaProyeccion: {
+      ...typography.caption1,
+      color: colors.secondaryLabel,
+      marginTop: spacing.lg,
+      lineHeight: 18,
+    },
     resumenCard: { marginBottom: spacing.lg },
 
     resultCard: { marginBottom: spacing.lg },

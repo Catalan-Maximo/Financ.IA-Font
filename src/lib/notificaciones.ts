@@ -12,8 +12,8 @@ import api from './api';
  */
 export async function registrarNotificaciones(): Promise<void> {
   try {
-    const { status } = await Notifications.requestPermissionsAsync();
-    if (status !== 'granted') {
+    const permisos = await Notifications.requestPermissionsAsync();
+    if (!permisos.granted) {
       console.warn('Permiso de notificaciones denegado');
       return;
     }

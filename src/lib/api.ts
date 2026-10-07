@@ -26,12 +26,19 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
-// Token vencido o inválido → limpiamos la sesión local
+// Callback que AuthContext registra para reaccionar a un 401
+let onNoAutorizado: (() => void) | null = null;
+export function setOnNoAutorizado(fn: (() => void) | null) {
+  onNoAutorizado = fn;
+}
+
+// Token vencido o inválido → limpiamos la sesión local y volvemos al login
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
       await borrarToken();
+      onNoAutorizado?.();
     }
     return Promise.reject(error);
   },

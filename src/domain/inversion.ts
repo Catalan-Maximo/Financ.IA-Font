@@ -29,6 +29,12 @@ export interface RendimientoDTO {
   gananciaReal: number;
   /** true si la tasa real supera la inflación. */
   leGanaALaInflacion: boolean;
+  /** Percentil 5 del retorno total (Monte Carlo), null en renta fija. */
+  peorEscenario: number | null;
+  /** Percentil 95 del retorno total (Monte Carlo), null en renta fija. */
+  mejorEscenario: number | null;
+  /** Nivel de riesgo según volatilidad histórica. */
+  riesgo: string;
 }
 
 /** Response de POST /activos/comparar */

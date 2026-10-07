@@ -181,7 +181,7 @@ export default function FaqSheet({ visible, onClose }: FaqSheetProps) {
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], dark: boolean) =>
   StyleSheet.create({
     scrim: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: 'rgba(0,0,0,0.4)',
     },
     panel: {

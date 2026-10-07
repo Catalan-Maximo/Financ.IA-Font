@@ -9,6 +9,12 @@ import AsesorVirtualScreen from './src/screens/AsesorVirtualScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import CriptoDetalleScreen from './src/screens/CriptoDetalleScreen';
+import MercadosScreen from './src/screens/MercadosScreen';
+import ChatScreen from './src/screens/ChatScreen';
+import PackDetailScreen from './src/screens/PackDetailScreen';
+import VersusScreen from './src/screens/VersusScreen';
+import ActivoDetalleScreen from './src/screens/ActivoDetalleScreen';
+import MiDineroScreen from './src/screens/MiDineroScreen';
 import BottomNav, { TabKey } from './src/components/BottomNav';
 import Entrada from './src/components/Entrada';
 import PanelPerfil from './src/components/PanelPerfil';
@@ -20,6 +26,8 @@ import { borrarPerfil } from './src/lib/storage';
 import { registrarNotificaciones } from './src/lib/notificaciones';
 import { useTheme } from './src/theme/colors';
 import type { CriptoEstado } from './src/domain/cripto';
+import type { PackCotizacion } from './src/domain/mercados';
+import type { Activo } from './src/domain/activo';
 
 export default function App() {
   const [perfilUsuario, setPerfilUsuario] = useState<string>('Moderado');
@@ -29,7 +37,10 @@ export default function App() {
   const [faqAbierto, setFaqAbierto] = useState(false);
   const [modoAuth, setModoAuth] = useState<'login' | 'register'>('login');
   const [criptoDetalle, setCriptoDetalle] = useState<CriptoEstado | null>(null);
-  const { token, perfilInversor, cargando: cargandoAuth, logout } = useAuth();
+  const [packDetalle, setPackDetalle] = useState<PackCotizacion | null>(null);
+  const [versusAbierto, setVersusAbierto] = useState(false);
+  const [activoDetalle, setActivoDetalle] = useState<Activo | null>(null);
+  const { token, email, perfilInversor, cargando: cargandoAuth, logout } = useAuth();
   const { perfilGuardado, cargando: cargandoPerfil } = usePerfilGuardado();
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
@@ -83,6 +94,18 @@ export default function App() {
 
   const renderPantalla = () => {
     switch (activeTab) {
+      case 'mercados':
+        return (
+          <MercadosScreen
+            onAbrirPack={setPackDetalle}
+            onAbrirDetalleCripto={setCriptoDetalle}
+            onAbrirVersus={() => setVersusAbierto(true)}
+          />
+        );
+      case 'midinero':
+        return <MiDineroScreen />;
+      case 'chat':
+        return <ChatScreen />;
       case 'simulador':
         return <SimuladorScreen perfil={perfilUsuario} />;
       case 'asesor':
@@ -94,6 +117,8 @@ export default function App() {
             onIrAlSimulador={() => setActiveTab('simulador')}
             onIrAlAsesor={() => setActiveTab('asesor')}
             onAbrirDetalleCripto={setCriptoDetalle}
+            onAbrirPack={setPackDetalle}
+            onAbrirDetalleActivo={setActivoDetalle}
           />
         );
     }
@@ -105,6 +130,43 @@ export default function App() {
       <SafeAreaProvider>
         <StatusBar style="auto" />
         <CriptoDetalleScreen estado={criptoDetalle} onVolver={() => setCriptoDetalle(null)} />
+      </SafeAreaProvider>
+    );
+  }
+
+  // VERSUS: comparación cara a cara
+  if (versusAbierto) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="auto" />
+        <VersusScreen onVolver={() => setVersusAbierto(false)} />
+      </SafeAreaProvider>
+    );
+  }
+
+  // Detalle de un activo de renta fija (tendencia de 30 días)
+  if (activoDetalle) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="auto" />
+        <ActivoDetalleScreen activo={activoDetalle} onVolver={() => setActivoDetalle(null)} />
+      </SafeAreaProvider>
+    );
+  }
+
+  // Detalle de pack: composición y acceso al simulador
+  if (packDetalle) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="auto" />
+        <PackDetailScreen
+          pack={packDetalle}
+          onVolver={() => setPackDetalle(null)}
+          onSimular={() => {
+            setPackDetalle(null);
+            setActiveTab('simulador');
+          }}
+        />
       </SafeAreaProvider>
     );
   }
@@ -161,7 +223,10 @@ export default function App() {
         <PanelPerfil
           visible={panelAbierto}
           perfil={perfilUsuario}
+          email={email ?? ''}
           onClose={() => setPanelAbierto(false)}
+          onNavegar={setActiveTab}
+          onAbrirFaq={() => setFaqAbierto(true)}
           onRehacerTest={rehacerTest}
           onLogout={cerrarSesion}
         />

@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import api from '../lib/api';
+import api, { setOnNoAutorizado } from '../lib/api';
 import { borrarPerfil, borrarToken, guardarPerfil, guardarToken, obtenerToken } from '../lib/storage';
 
 interface AuthState {
   /** Token JWT de la sesión (null = no logueado). */
   token: string | null;
+  /** Email del usuario logueado (null si no hay sesión). */
+  email: string | null;
   /** Perfil inversor del usuario logueado (null si todavía no hizo el test). */
   perfilInversor: string | null;
   /** true mientras se restaura la sesión guardada al arrancar. */
@@ -22,6 +24,7 @@ const AuthContext = createContext<AuthState | null>(null);
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const [perfilInversor, setPerfilInversor] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
 
@@ -35,6 +38,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setCargando(false));
   }, []);
 
+  // Si una petición recibe 401, el interceptor borra el token guardado
+  // y nos avisa acá para volver al login (si no, la app queda en loop).
+  useEffect(() => {
+    setOnNoAutorizado(() => {
+      setToken(null);
+      setEmail(null);
+      setPerfilInversor(null);
+    });
+    return () => setOnNoAutorizado(null);
+  }, []);
+
   /** El backend devuelve el perfil en el login: lo cacheamos localmente. */
   const sincronizarPerfil = async (perfil: string | null) => {
     setPerfilInversor(perfil ?? null);
@@ -45,16 +59,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string) => {
-    const response = await api.post('/auth/login', { email, password });
+  const login = async (mail: string, password: string) => {
+    const response = await api.post('/auth/login', { email: mail, password });
     setToken(response.data.token);
+    setEmail(response.data.email);
     await guardarToken(response.data.token);
     await sincronizarPerfil(response.data.perfilInversor ?? null);
   };
 
-  const register = async (nombre: string, email: string, password: string) => {
-    const response = await api.post('/auth/register', { nombre, email, password });
+  const register = async (nombre: string, mail: string, password: string) => {
+    const response = await api.post('/auth/register', { nombre, email: mail, password });
     setToken(response.data.token);
+    setEmail(response.data.email);
     await guardarToken(response.data.token);
     // Usuario nuevo: nunca tiene perfil todavía
     await sincronizarPerfil(response.data.perfilInversor ?? null);
@@ -64,11 +80,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await borrarToken();
     await borrarPerfil();
     setToken(null);
+    setEmail(null);
     setPerfilInversor(null);
   };
 
   return (
-    <AuthContext.Provider value={{ token, perfilInversor, cargando, login, register, logout }}>
+    <AuthContext.Provider value={{ token, email, perfilInversor, cargando, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

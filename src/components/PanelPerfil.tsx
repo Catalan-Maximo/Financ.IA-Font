@@ -2,47 +2,89 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import {
   Animated,
   Pressable,
+  ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
-  Switch,
   Platform,
   useWindowDimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Header from './Header';
 import Badge from './Badge';
 import { useTheme } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { radius } from '../theme/radius';
+import type { TabKey } from './BottomNav';
 
 interface PanelPerfilProps {
   /** Si el panel está abierto. */
   visible: boolean;
   /** Perfil de inversor actual. */
   perfil: string;
+  /** Email del usuario logueado. */
+  email: string;
   /** Cerrar el panel (tap en el scrim). */
   onClose: () => void;
-  /** Rehacer el test del inversor (cierra sesión del perfil). */
+  /** Navegar a una pestaña de la app. */
+  onNavegar: (tab: TabKey) => void;
+  /** Abrir el panel de consultas frecuentes. */
+  onAbrirFaq: () => void;
+  /** Rehacer el test del inversor. */
   onRehacerTest: () => void;
   /** Cerrar sesión (borra token y vuelve al login). */
   onLogout: () => void;
 }
 
+/** Fila de menú con ícono, título y acción. */
+function FilaMenu({
+  icono,
+  titulo,
+  color,
+  onPress,
+  ultima = false,
+  children,
+}: {
+  icono: keyof typeof Ionicons.glyphMap;
+  titulo: string;
+  color: string;
+  onPress: () => void;
+  ultima?: boolean;
+  children?: React.ReactNode;
+}) {
+  const { colors } = useTheme();
+  const s = useMemo(() => makeStyles(colors), [colors]);
+
+  return (
+    <Pressable
+      style={({ pressed }) => [s.fila, !ultima && s.filaBorde, pressed && s.filaPressed]}
+      onPress={onPress}
+    >
+      <View style={s.filaIzq}>
+        <Ionicons name={icono} size={22} color={color} />
+        <Text style={s.filaTexto}>{titulo}</Text>
+      </View>
+      {children}
+    </Pressable>
+  );
+}
+
 /**
- * Panel deslizante desde la derecha (estilo iOS) con los datos del
- * usuario: perfil, toggle de modo oscuro y reinicio del test.
+ * Panel deslizante desde la derecha (estilo iOS) con la cuenta del
+ * usuario organizada en grupos: navegación, preferencias, ayuda y cuenta.
  */
-export default function PanelPerfil({ visible, perfil, onClose, onRehacerTest, onLogout }: PanelPerfilProps) {
+export default function PanelPerfil({
+  visible, perfil, email, onClose, onNavegar, onAbrirFaq, onRehacerTest, onLogout,
+}: PanelPerfilProps) {
   const { colors, dark, setMode } = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
-  const ANCHO = Math.min(width * 0.82, 340);
+  const ANCHO = Math.min(width * 0.85, 340);
 
   const scrim = useRef(new Animated.Value(0)).current;
   const slide = useRef(new Animated.Value(-ANCHO)).current;
@@ -66,9 +108,15 @@ export default function PanelPerfil({ visible, perfil, onClose, onRehacerTest, o
     setMode(oscuro ? 'dark' : 'light');
   };
 
+  const navegar = (tab: TabKey) => {
+    onClose();
+    onNavegar(tab);
+  };
+
+  const inicial = (email.trim().charAt(0) || 'F').toUpperCase();
+
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents={visible ? 'auto' : 'none'}>
-      {/* Scrim que oscurece el fondo y cierra al tocarlo */}
       <Animated.View style={[s.scrim, { opacity: scrim }]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
       </Animated.View>
@@ -84,46 +132,55 @@ export default function PanelPerfil({ visible, perfil, onClose, onRehacerTest, o
           },
         ]}
       >
-        <Header text="Tu Perfil" level="title" style={s.titulo} />
-        <Badge label={`Perfil: ${perfil}`} tone="brand" style={s.badge} />
-
-        <View style={s.separator} />
-
-        {/* Toggle de apariencia */}
-        <View style={s.fila}>
-          <View style={s.filaIzq}>
-            <Ionicons name={dark ? 'moon' : 'sunny'} size={22} color={colors.brand} />
-            <Text style={s.filaTexto}>Modo oscuro</Text>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {/* ── Cabecera de cuenta ─── */}
+          <View style={s.cabecera}>
+            <View style={s.avatar}>
+              <Text style={s.avatarTexto}>{inicial}</Text>
+            </View>
+            <View style={s.cabeceraTexto}>
+              <Text style={s.email} numberOfLines={1}>{email || 'usuario@financia.com'}</Text>
+              <Badge label={`Perfil: ${perfil}`} tone="brand" style={s.badge} />
+            </View>
           </View>
-          <Switch
-            value={dark}
-            onValueChange={cambiarTema}
-            trackColor={{ false: colors.fill, true: colors.brand }}
-            thumbColor="#FFFFFF"
-          />
-        </View>
 
-        {/* Reinicio del test */}
-        <Pressable
-          style={({ pressed }) => [s.fila, pressed && s.filaPressed]}
-          onPress={onRehacerTest}
-        >
-          <View style={s.filaIzq}>
-            <Ionicons name="refresh" size={22} color={colors.systemRed} />
-            <Text style={[s.filaTexto, s.filaTextoPeligro]}>Rehacer test del inversor</Text>
+          {/* ── Navegación ─── */}
+          <Text style={s.seccionTitulo}>IR A</Text>
+          <View style={s.grupo}>
+            <FilaMenu icono="home-outline" titulo="Inicio" color={colors.brand} onPress={() => navegar('dashboard')} />
+            <FilaMenu icono="stats-chart-outline" titulo="Mercados" color={colors.brand} onPress={() => navegar('mercados')} />
+            <FilaMenu icono="wallet-outline" titulo="Mi Dinero" color={colors.brand} onPress={() => navegar('midinero')} />
+            <FilaMenu icono="chatbubbles-outline" titulo="Chat de dudas" color={colors.brand} onPress={() => navegar('chat')} />
+            <FilaMenu icono="calculator-outline" titulo="Simulador" color={colors.brand} onPress={() => navegar('simulador')} />
+            <FilaMenu icono="sparkles-outline" titulo="Asesor Virtual" color={colors.brand} onPress={() => navegar('asesor')} ultima />
           </View>
-        </Pressable>
 
-        {/* Cierre de sesión */}
-        <Pressable
-          style={({ pressed }) => [s.fila, pressed && s.filaPressed]}
-          onPress={onLogout}
-        >
-          <View style={s.filaIzq}>
-            <Ionicons name="log-out-outline" size={22} color={colors.systemRed} />
-            <Text style={[s.filaTexto, s.filaTextoPeligro]}>Cerrar sesión</Text>
+          {/* ── Preferencias ─── */}
+          <Text style={s.seccionTitulo}>PREFERENCIAS</Text>
+          <View style={s.grupo}>
+            <FilaMenu icono={dark ? 'moon' : 'sunny'} titulo="Modo oscuro" color={colors.brand} onPress={() => cambiarTema(!dark)} ultima>
+              <Switch
+                value={dark}
+                onValueChange={cambiarTema}
+                trackColor={{ false: colors.fill, true: colors.brand }}
+                thumbColor="#FFFFFF"
+              />
+            </FilaMenu>
           </View>
-        </Pressable>
+
+          {/* ── Ayuda ─── */}
+          <Text style={s.seccionTitulo}>AYUDA</Text>
+          <View style={s.grupo}>
+            <FilaMenu icono="help-circle-outline" titulo="Consultas frecuentes" color={colors.systemBlue} onPress={() => { onClose(); onAbrirFaq(); }} ultima />
+          </View>
+
+          {/* ── Cuenta ─── */}
+          <Text style={s.seccionTitulo}>CUENTA</Text>
+          <View style={s.grupo}>
+            <FilaMenu icono="refresh" titulo="Rehacer test del inversor" color={colors.systemRed} onPress={onRehacerTest} />
+            <FilaMenu icono="log-out-outline" titulo="Cerrar sesión" color={colors.systemRed} onPress={onLogout} ultima />
+          </View>
+        </ScrollView>
       </Animated.View>
     </View>
   );
@@ -132,7 +189,7 @@ export default function PanelPerfil({ visible, perfil, onClose, onRehacerTest, o
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
     scrim: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: 'rgba(0,0,0,0.4)',
     },
     panel: {
@@ -145,13 +202,42 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       borderBottomRightRadius: radius.xl,
       borderRightWidth: StyleSheet.hairlineWidth,
       borderRightColor: colors.separator,
-      paddingHorizontal: spacing.xl,
+      paddingHorizontal: spacing.lg,
     },
-    titulo: { marginBottom: spacing.lg },
-    badge: { alignSelf: 'flex-start', marginBottom: spacing.lg },
-    separator: {
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: colors.separator,
+
+    /* ── Cabecera ─── */
+    cabecera: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      marginBottom: spacing.xl,
+    },
+    avatar: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: colors.brand,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    avatarTexto: { ...typography.title2, fontWeight: '700', color: colors.onBrand },
+    cabeceraTexto: { flex: 1, gap: spacing.xs },
+    email: { ...typography.headline, fontWeight: '600', color: colors.label },
+    badge: { alignSelf: 'flex-start' },
+
+    /* ── Grupos ─── */
+    seccionTitulo: {
+      ...typography.caption2,
+      fontWeight: '600',
+      color: colors.tertiaryLabel,
+      marginBottom: spacing.xs,
+      marginLeft: spacing.sm,
+      letterSpacing: 0.5,
+    },
+    grupo: {
+      backgroundColor: colors.tertiarySystemBackground,
+      borderRadius: radius.lg,
+      overflow: 'hidden',
       marginBottom: spacing.lg,
     },
     fila: {
@@ -159,12 +245,14 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingVertical: spacing.md,
-      borderRadius: radius.sm,
-      paddingHorizontal: spacing.sm,
-      marginHorizontal: -spacing.sm,
+      paddingHorizontal: spacing.lg,
+    },
+    filaBorde: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.separator,
     },
     filaPressed: {
-      backgroundColor: colors.fill,
+      backgroundColor: 'rgba(128,128,128,0.15)',
     },
     filaIzq: {
       flexDirection: 'row',
@@ -174,8 +262,5 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     filaTexto: {
       ...typography.body,
       color: colors.label,
-    },
-    filaTextoPeligro: {
-      color: colors.systemRed,
     },
   });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import api from '../lib/api';
 import { FORM_DEFAULTS } from '../constants';
 import type { IARequest, IAResponse } from '../domain/ia';
@@ -15,6 +15,16 @@ export default function useAsesorIA(perfil: string) {
   const [loading, setLoading] = useState(false);
   const [respuesta, setRespuesta] = useState<IAResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Precargamos la inflación con el último IPC oficial (job del BCRA)
+  useEffect(() => {
+    api.get('/activos/inflacion')
+      .then((r) => {
+        const valor = r.data?.valor;
+        if (valor && valor > 0) setInflacion(String(valor));
+      })
+      .catch(() => {});
+  }, []);
 
   const consultar = async () => {
     const montoNum = parseFloat(monto);
@@ -42,7 +52,8 @@ export default function useAsesorIA(perfil: string) {
         plazoMeses: plazoNum,
         inflacionMensual: inflacionNum,
       };
-      const response = await api.post<IAResponse>('/ia/simular', body);
+      // El asesor consulta mercados + Groq: le damos más tiempo que el default
+      const response = await api.post<IAResponse>('/ia/simular', body, { timeout: 30000 });
       setRespuesta(response.data);
     } catch (e) {
       console.error(e);

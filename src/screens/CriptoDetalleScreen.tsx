@@ -1,12 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
-import Button from '../components/Button';
 import Screen from '../components/Screen';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import type { CriptoEstado, VelaDiaria } from '../domain/cripto';
@@ -67,7 +66,7 @@ export default function CriptoDetalleScreen({ estado, onVolver }: CriptoDetalleP
     : 'sin datos suficientes';
 
   return (
-    <Screen safeTop={false}>
+    <Screen>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -75,12 +74,13 @@ export default function CriptoDetalleScreen({ estado, onVolver }: CriptoDetalleP
           paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.xxl,
         }}
       >
-        <Button
-          title="Volver"
-          icon="chevron-back-outline"
+        <Pressable
+          style={({ pressed }) => [s.volver, pressed && s.volverPressed]}
           onPress={onVolver}
-          style={s.volver}
-        />
+          hitSlop={8}
+        >
+          <Ionicons name="chevron-back" size={22} color={colors.label} />
+        </Pressable>
 
         {/* Encabezado */}
         <View style={s.encabezado}>
@@ -190,7 +190,17 @@ export default function CriptoDetalleScreen({ estado, onVolver }: CriptoDetalleP
 
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
-    volver: { alignSelf: 'flex-start', marginBottom: spacing.xl },
+    volver: {
+      alignSelf: 'flex-start',
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.fill,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.xl,
+    },
+    volverPressed: { opacity: 0.6 },
     encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
     precio: { ...typography.title1, fontWeight: '700', color: colors.label, marginBottom: spacing.xs },
     cambio: { ...typography.footnote, marginBottom: spacing.xl },
