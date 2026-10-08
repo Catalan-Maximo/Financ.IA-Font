@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
@@ -7,7 +7,8 @@ import Header from '../components/Header';
 import Screen from '../components/Screen';
 import AssetListItem from '../components/AssetListItem';
 import PackCard from '../components/PackCard';
-import Badge from '../components/Badge';
+import SegmentedTabs from '../components/SegmentedTabs';
+import Cargando from '../components/Cargando';
 import GraficoBarras, { type PuntoGrafico } from '../components/GraficoBarras';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import useMercados from '../hooks/useMercados';
@@ -31,13 +32,6 @@ const TONO_VEREDICTO: Record<string, 'success' | 'warning' | 'danger'> = {
   BUY: 'success',
   WATCH: 'warning',
   AVOID: 'danger',
-};
-
-const TONO_VALORACION: Record<string, 'success' | 'warning' | 'danger' | 'brand'> = {
-  Barata: 'success',
-  Razonable: 'warning',
-  Cara: 'danger',
-  'n/d': 'brand',
 };
 
 interface MercadosScreenProps {
@@ -78,8 +72,8 @@ export default function MercadosScreen({ onAbrirPack, onAbrirDetalleCripto, onAb
 
   if (loading) {
     return (
-      <Screen style={s.loading}>
-        <ActivityIndicator size="large" color={colors.brand} />
+      <Screen>
+        <Cargando style={s.loading} />
       </Screen>
     );
   }
@@ -98,20 +92,12 @@ export default function MercadosScreen({ onAbrirPack, onAbrirDetalleCripto, onAb
       </Pressable>
 
       {/* Top Tabs */}
-      <View style={s.tabs}>
-        {TABS.map((t) => {
-          const activa = t.key === tab;
-          return (
-            <Pressable
-              key={t.key}
-              onPress={() => setTab(t.key)}
-              style={[s.tab, activa && s.tabActiva]}
-            >
-              <Text style={[s.tabTexto, activa && s.tabTextoActiva]}>{t.label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <SegmentedTabs
+        opciones={TABS}
+        activa={tab}
+        onCambiar={(t) => setTab(t as TabMercado)}
+        style={s.tabsMargin}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -236,7 +222,7 @@ function abreviaturaDolar(nombre: string): string {
 
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
-    loading: { alignItems: 'center', justifyContent: 'center' },
+    loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     titulo: { marginTop: spacing.lg, marginBottom: spacing.lg },
 
     versusBtn: {
@@ -259,17 +245,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       marginBottom: spacing.lg,
     },
 
-    tabs: {
-      flexDirection: 'row',
-      backgroundColor: colors.tertiarySystemBackground,
-      borderRadius: 10,
-      padding: 3,
-      marginBottom: spacing.sm,
-    },
-    tab: { flex: 1, paddingVertical: spacing.sm, borderRadius: 8, alignItems: 'center' },
-    tabActiva: { backgroundColor: colors.secondarySystemBackground },
-    tabTexto: { ...typography.subheadline, color: colors.secondaryLabel },
-    tabTextoActiva: { color: colors.label, fontWeight: '600' },
+    tabsMargin: { marginBottom: spacing.sm },
 
     seccion: { marginTop: spacing.xl, marginBottom: spacing.md },
   });

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, ActivityIndicator, Alert, Pressable } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, Alert, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Button from '../components/Button';
@@ -8,6 +8,7 @@ import Card from '../components/Card';
 import Screen from '../components/Screen';
 import CryptoCard from '../components/CryptoCard';
 import PackCard from '../components/PackCard';
+import Cargando from '../components/Cargando';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import useMercado from '../hooks/useMercado';
 import useCripto from '../hooks/useCripto';
@@ -107,8 +108,8 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onAbrirDetall
 
   if (loading) {
     return (
-      <Screen style={s.loading}>
-        <ActivityIndicator size="large" color={colors.brand} />
+      <Screen>
+        <Cargando style={s.loading} />
       </Screen>
     );
   }
@@ -219,7 +220,7 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onAbrirDetall
 
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
-    loading: { alignItems: 'center', justifyContent: 'center' },
+    loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
     /* ── Hero ─── */
     hero: {

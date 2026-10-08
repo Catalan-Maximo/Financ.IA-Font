@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
+  Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +8,9 @@ import Header from '../components/Header';
 import Card from '../components/Card';
 import Screen from '../components/Screen';
 import EstadoVacio from '../components/EstadoVacio';
+import SegmentedTabs from '../components/SegmentedTabs';
+import BarraProgreso from '../components/BarraProgreso';
+import Cargando from '../components/Cargando';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import useMiDinero from '../hooks/useMiDinero';
 import { ACTIVOS_PORTFOLIO, CATEGORIAS_GASTO } from '../domain/midinero';
@@ -17,6 +20,12 @@ import { spacing } from '../theme/spacing';
 import { radius } from '../theme/radius';
 
 type TabMiDinero = 'portafolio' | 'metas' | 'gastos';
+
+const TABS_MIDINERO = [
+  { key: 'gastos', label: 'Gastos' },
+  { key: 'metas', label: 'Metas' },
+  { key: 'portafolio', label: 'Portafolio' },
+];
 
 const formatPesos = (v: number) =>
   `$${v.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -92,8 +101,8 @@ export default function MiDineroScreen() {
 
   if (loading) {
     return (
-      <Screen style={s.loading}>
-        <ActivityIndicator size="large" color={colors.brand} />
+      <Screen>
+        <Cargando style={s.loading} />
       </Screen>
     );
   }
@@ -113,19 +122,11 @@ export default function MiDineroScreen() {
         <Header text="Mi Dinero" level="title" style={s.titulo} />
 
         {/* Top Tabs */}
-        <View style={s.tabs}>
-          {(['gastos', 'metas', 'portafolio'] as TabMiDinero[]).map((t) => (
-            <Pressable
-              key={t}
-              onPress={() => setTab(t)}
-              style={[s.tab, tab === t && s.tabActiva]}
-            >
-              <Text style={[s.tabTexto, tab === t && s.tabTextoActiva]}>
-                {t === 'gastos' ? 'Gastos' : t === 'metas' ? 'Metas' : 'Portafolio'}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        <SegmentedTabs
+          opciones={TABS_MIDINERO}
+          activa={tab}
+          onCambiar={(t) => setTab(t as TabMiDinero)}
+        />
 
         {tab === 'portafolio' && (
           <>
@@ -265,9 +266,7 @@ export default function MiDineroScreen() {
                     <Text style={s.posActivo} numberOfLines={1}>{m.nombre}</Text>
                     <Text style={s.metaPct}>{pct.toFixed(0)}%</Text>
                   </View>
-                  <View style={s.progressTrack}>
-                    <View style={[s.progressFill, { width: `${pct}%` }]} />
-                  </View>
+                  <BarraProgreso progreso={pct} style={s.progressTrack} />
                   <Text style={s.posDetalle} numberOfLines={1}>
                     {formatPesos(m.montoActual)} de {formatPesos(m.montoObjetivo)} · hasta {m.fechaLimite}
                   </Text>
@@ -366,9 +365,7 @@ export default function MiDineroScreen() {
                   return (
                     <View key={cat} style={s.categoriaFila}>
                       <Text style={s.categoriaNombre}>{cat}</Text>
-                      <View style={s.categoriaTrack}>
-                        <View style={[s.categoriaFill, { width: `${ancho}%` }]} />
-                      </View>
+                      <BarraProgreso progreso={ancho} style={s.categoriaTrack} />
                       <Text style={s.categoriaMonto} numberOfLines={1}>{formatPesos(monto)}</Text>
                     </View>
                   );
@@ -473,20 +470,8 @@ export default function MiDineroScreen() {
 
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
-    loading: { alignItems: 'center', justifyContent: 'center' },
+    loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     titulo: { marginBottom: spacing.lg },
-
-    tabs: {
-      flexDirection: 'row',
-      backgroundColor: colors.tertiarySystemBackground,
-      borderRadius: 10,
-      padding: 3,
-      marginBottom: spacing.lg,
-    },
-    tab: { flex: 1, paddingVertical: spacing.sm, borderRadius: 8, alignItems: 'center' },
-    tabActiva: { backgroundColor: colors.secondarySystemBackground },
-    tabTexto: { ...typography.subheadline, color: colors.secondaryLabel },
-    tabTextoActiva: { color: colors.label, fontWeight: '600' },
 
     resumen: { padding: spacing.lg, marginBottom: spacing.lg },
     resumenFila: {
@@ -574,14 +559,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     },
     stopLossTexto: { ...typography.caption1, fontWeight: '600', color: colors.systemRed, flex: 1 },
 
-    progressTrack: {
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: colors.tertiarySystemBackground,
-      overflow: 'hidden',
-      marginTop: spacing.md,
-    },
-    progressFill: { height: '100%', backgroundColor: colors.brand, borderRadius: 4 },
+    progressTrack: { marginTop: spacing.md },
 
     metaAcciones: {
       flexDirection: 'row',
@@ -610,14 +588,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       marginTop: spacing.sm,
     },
     categoriaNombre: { ...typography.footnote, color: colors.label, flex: 1 },
-    categoriaTrack: {
-      flex: 1.5,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: colors.tertiarySystemBackground,
-      overflow: 'hidden',
-    },
-    categoriaFill: { height: '100%', backgroundColor: colors.brand, borderRadius: 4 },
+    categoriaTrack: { flex: 1.5 },
     categoriaMonto: {
       ...typography.footnote,
       fontWeight: '600',

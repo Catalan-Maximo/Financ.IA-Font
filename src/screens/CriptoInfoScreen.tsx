@@ -5,6 +5,7 @@ import api from '../lib/api';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import BotonVolver from '../components/BotonVolver';
+import Advertencia from '../components/Advertencia';
 import Screen from '../components/Screen';
 import GraficoBarras, { type PuntoGrafico } from '../components/GraficoBarras';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
@@ -55,13 +56,11 @@ export default function CriptoInfoScreen({ info, onVolver }: CriptoInfoProps) {
           </Card>
         )}
 
-        <Card style={s.advertencia}>
-          <Text style={s.advertenciaTexto}>
-            Esta cripto es solo informativa: no tiene el análisis técnico ni los
-            veredictos de compra que damos para Bitcoin y Ethereum. Las cripto son
-            muy volátiles y pueden bajar 20% o más en pocos días.
-          </Text>
-        </Card>
+        <Advertencia texto={
+          'Esta cripto es solo informativa: no tiene el análisis técnico ni los ' +
+          'veredictos de compra que damos para Bitcoin y Ethereum. Las cripto son ' +
+          'muy volátiles y pueden bajar 20% o más en pocos días.'
+        } />
       </ScrollView>
     </Screen>
   );
@@ -77,11 +76,4 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
 
     card: { padding: spacing.lg, marginBottom: spacing.lg },
     seccion: { marginBottom: spacing.lg },
-
-    advertencia: {
-      padding: spacing.lg,
-      marginBottom: spacing.lg,
-      borderColor: colors.systemYellow,
-    },
-    advertenciaTexto: { ...typography.footnote, color: colors.label, lineHeight: 20 },
   });

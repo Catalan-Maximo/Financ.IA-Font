@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View,
+  Modal, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,6 +10,7 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import BotonVolver from '../components/BotonVolver';
 import Cargando from '../components/Cargando';
+import BarraProgreso from '../components/BarraProgreso';
 import Screen from '../components/Screen';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import type { RendimientoDTO } from '../domain/inversion';
@@ -168,8 +169,8 @@ export default function VersusScreen({ onVolver }: VersusScreenProps) {
 
   if (cargando) {
     return (
-      <Screen style={s.loading}>
-        <ActivityIndicator size="large" color={colors.brand} />
+      <Screen>
+        <Cargando style={s.loading} />
       </Screen>
     );
   }
@@ -213,9 +214,10 @@ export default function VersusScreen({ onVolver }: VersusScreenProps) {
             </View>
 
             {resultado.probabilidadA != null && (
-              <View style={s.probBar}>
-                <View style={[s.probFill, { width: `${Math.round(resultado.probabilidadA * 100)}%` }]} />
-              </View>
+              <BarraProgreso
+                progreso={Math.round(resultado.probabilidadA * 100)}
+                style={s.probBar}
+              />
             )}
 
             {/* Gráfico de ganancia real proyectada: las dos barras lado a lado */}
@@ -258,7 +260,7 @@ export default function VersusScreen({ onVolver }: VersusScreenProps) {
 
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
-    loading: { alignItems: 'center', justifyContent: 'center' },
+    loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     titulo: { marginBottom: spacing.xs },
     subtitulo: { ...typography.body, color: colors.secondaryLabel, marginBottom: spacing.xl },
 
@@ -315,14 +317,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     verde: { color: colors.systemGreen },
     rojo: { color: colors.systemRed },
 
-    probBar: {
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: colors.tertiarySystemBackground,
-      overflow: 'hidden',
-      marginBottom: spacing.md,
-    },
-    probFill: { height: '100%', backgroundColor: colors.brand, borderRadius: 4 },
+    probBar: { marginBottom: spacing.md },
 
     mensajeCard: { padding: spacing.md, marginBottom: spacing.md },
     mensajeTexto: { ...typography.footnote, color: colors.label, lineHeight: 18 },

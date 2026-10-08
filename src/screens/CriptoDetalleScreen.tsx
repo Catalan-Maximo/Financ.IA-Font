@@ -8,6 +8,7 @@ import ExplicarDatosIA from '../components/ExplicarDatosIA';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import BotonVolver from '../components/BotonVolver';
+import Advertencia from '../components/Advertencia';
 import Screen from '../components/Screen';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import type { CriptoEstado, VelaDiaria } from '../domain/cripto';
@@ -172,16 +173,11 @@ export default function CriptoDetalleScreen({ estado, onVolver }: CriptoDetalleP
         </Card>
 
         {/* Advertencia de volatilidad */}
-        <Card style={s.advertencia}>
-          <View style={s.advertenciaFila}>
-            <Ionicons name="warning" size={18} color={colors.systemYellow} />
-            <Text style={s.advertenciaTexto}>
-              Las criptomonedas son muy volátiles: pueden bajar 20% o más en pocos días.
-              Este análisis técnico es informativo y no garantiza resultados. Invertí solo
-              lo que estés dispuesto a perder.
-            </Text>
-          </View>
-        </Card>
+        <Advertencia texto={
+          'Las criptomonedas son muy volátiles: pueden bajar 20% o más en pocos días. ' +
+          'Este análisis técnico es informativo y no garantiza resultados. Invertí solo ' +
+          'lo que estés dispuesto a perder.'
+        } />
 
         <ExplicarDatosIA datos={
           `${nombre}: precio $${estado.precio.toLocaleString('es-AR')}, ` +
@@ -241,12 +237,4 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     checkTexto: { flex: 1 },
     checkLabel: { ...typography.subheadline, fontWeight: '600', color: colors.label },
     checkDetalle: { ...typography.caption1, color: colors.secondaryLabel, marginTop: 2 },
-
-    advertencia: {
-      padding: spacing.lg,
-      marginBottom: spacing.lg,
-      borderColor: colors.systemYellow,
-    },
-    advertenciaFila: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
-    advertenciaTexto: { ...typography.footnote, color: colors.label, lineHeight: 20, flex: 1 },
   });

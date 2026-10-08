@@ -6,6 +6,7 @@ import Header from '../components/Header';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import BotonVolver from '../components/BotonVolver';
+import Advertencia from '../components/Advertencia';
 import Screen from '../components/Screen';
 import GraficoBarras, { type PuntoGrafico } from '../components/GraficoBarras';
 import ExplicarDatosIA from '../components/ExplicarDatosIA';
@@ -146,12 +147,10 @@ export default function AccionDetalleScreen({ cotizacion, onVolver }: AccionDeta
           </>
         )}
 
-        <Card style={s.advertencia}>
-          <Text style={s.advertenciaTexto}>
-            Este análisis fundamental es informativo y no garantiza resultados. Las acciones
-            pueden bajar por factores ajenos a la empresa.
-          </Text>
-        </Card>
+        <Advertencia texto={
+          'Este análisis fundamental es informativo y no garantiza resultados. Las acciones ' +
+          'pueden bajar por factores ajenos a la empresa.'
+        } />
 
         {f && (
           <ExplicarDatosIA datos={
@@ -200,11 +199,4 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
 
     verde: { color: colors.systemGreen },
     rojo: { color: colors.systemRed },
-
-    advertencia: {
-      padding: spacing.lg,
-      marginBottom: spacing.lg,
-      borderColor: colors.systemYellow,
-    },
-    advertenciaTexto: { ...typography.footnote, color: colors.label, lineHeight: 20 },
   });

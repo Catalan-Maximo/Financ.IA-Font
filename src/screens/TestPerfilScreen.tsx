@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, Alert, ActivityIndicator, Platform, Animated, Easing } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, Alert, Platform, Animated, Easing } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Screen from '../components/Screen';
+import Cargando from '../components/Cargando';
 import Entrada from '../components/Entrada';
 import useTestPerfil from '../hooks/useTestPerfil';
 import { useTheme } from '../theme/colors';
@@ -58,8 +59,8 @@ export default function TestPerfilScreen({ onTestComplete }: TestPerfilProps) {
 
   if (loading) {
     return (
-      <Screen style={s.loading}>
-        <ActivityIndicator size="large" color={colors.brand} />
+      <Screen>
+        <Cargando style={s.loading} />
       </Screen>
     );
   }
@@ -95,7 +96,7 @@ export default function TestPerfilScreen({ onTestComplete }: TestPerfilProps) {
 
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
-    loading: { alignItems: 'center', justifyContent: 'center' },
+    loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     stepLabel: { marginBottom: spacing.sm },
     track: {
       height: 4,
