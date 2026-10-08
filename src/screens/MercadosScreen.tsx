@@ -85,7 +85,7 @@ export default function MercadosScreen({ onAbrirPack, onAbrirDetalleCripto, onAb
         onPress={onAbrirVersus}
       >
         <Ionicons name="git-compare-outline" size={18} color={colors.onBrand} />
-        <Text style={s.versusTexto}>⚔️ Versus: compará dos inversiones</Text>
+        <Text style={s.versusTexto}>Versus: compará dos inversiones</Text>
       </Pressable>
 
       {/* Top Tabs */}

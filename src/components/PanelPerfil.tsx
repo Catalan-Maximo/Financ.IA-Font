@@ -33,6 +33,8 @@ interface PanelPerfilProps {
   onNavegar: (tab: TabKey) => void;
   /** Abrir el panel de consultas frecuentes. */
   onAbrirFaq: () => void;
+  /** Abrir la pantalla VERSUS. */
+  onAbrirVersus: () => void;
   /** Rehacer el test del inversor. */
   onRehacerTest: () => void;
   /** Cerrar sesión (borra token y vuelve al login). */
@@ -77,7 +79,7 @@ function FilaMenu({
  * usuario organizada en grupos: navegación, preferencias, ayuda y cuenta.
  */
 export default function PanelPerfil({
-  visible, perfil, email, onClose, onNavegar, onAbrirFaq, onRehacerTest, onLogout,
+  visible, perfil, email, onClose, onNavegar, onAbrirFaq, onAbrirVersus, onRehacerTest, onLogout,
 }: PanelPerfilProps) {
   const { colors, dark, setMode } = useTheme();
   const insets = useSafeAreaInsets();
@@ -150,6 +152,7 @@ export default function PanelPerfil({
             <FilaMenu icono="home-outline" titulo="Inicio" color={colors.brand} onPress={() => navegar('dashboard')} />
             <FilaMenu icono="stats-chart-outline" titulo="Mercados" color={colors.brand} onPress={() => navegar('mercados')} />
             <FilaMenu icono="wallet-outline" titulo="Mi Dinero" color={colors.brand} onPress={() => navegar('midinero')} />
+            <FilaMenu icono="git-compare-outline" titulo="Versus" color={colors.brand} onPress={() => { onClose(); onAbrirVersus(); }} />
             <FilaMenu icono="chatbubbles-outline" titulo="Chat de dudas" color={colors.brand} onPress={() => navegar('chat')} />
             <FilaMenu icono="calculator-outline" titulo="Simulador" color={colors.brand} onPress={() => navegar('simulador')} />
             <FilaMenu icono="sparkles-outline" titulo="Asesor Virtual" color={colors.brand} onPress={() => navegar('asesor')} ultima />

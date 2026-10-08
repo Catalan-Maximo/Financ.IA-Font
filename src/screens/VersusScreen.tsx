@@ -86,19 +86,21 @@ function CardResultado({ titulo, r }: { titulo: string; r: RendimientoDTO }) {
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
+  // Mismas líneas siempre (la de rango muestra "—" en renta fija):
+  // así las dos tarjetas quedan simétricas en alto.
+  const rango = r.peorEscenario != null && r.mejorEscenario != null
+    ? `${r.peorEscenario.toFixed(0)}% a +${r.mejorEscenario.toFixed(0)}%`
+    : '—';
+
   return (
     <Card style={s.resultCard}>
       <Text style={s.resultTitulo}>{titulo}</Text>
-      <Text style={s.resultEntidad}>{r.entidad}</Text>
+      <Text style={s.resultEntidad} numberOfLines={1}>{r.entidad}</Text>
       <Text style={[s.resultReal, r.leGanaALaInflacion ? s.verde : s.rojo]}>
-        {r.tasaRealMensual > 0 ? '+' : ''}{r.tasaRealMensual}% real mensual
+        {r.tasaRealMensual > 0 ? '+' : ''}{r.tasaRealMensual}% real
       </Text>
       <Text style={s.resultDetalle}>Riesgo: {r.riesgo}</Text>
-      {r.peorEscenario != null && r.mejorEscenario != null && (
-        <Text style={s.resultDetalle}>
-          Rango: {r.peorEscenario.toFixed(0)}% a +{r.mejorEscenario.toFixed(0)}%
-        </Text>
-      )}
+      <Text style={s.resultDetalle}>Rango: {rango}</Text>
     </Card>
   );
 }
@@ -179,7 +181,7 @@ export default function VersusScreen({ onVolver }: VersusScreenProps) {
           <Ionicons name="chevron-back" size={22} color={colors.label} />
         </Pressable>
 
-        <Header text="⚔️ Versus" level="title" style={s.titulo} />
+        <Header text="Versus" level="title" style={s.titulo} />
         <Text style={s.subtitulo}>Compará dos inversiones y mirá quién gana</Text>
 
         <View style={s.vsFila}>
@@ -201,7 +203,8 @@ export default function VersusScreen({ onVolver }: VersusScreenProps) {
         {resultado && !calculando && (
           <>
             <View style={s.ganadorBanner}>
-              <Text style={s.ganadorTexto}>🏆 Gana: {resultado.ganador}</Text>
+              <Ionicons name="trophy" size={20} color={colors.onBrand} />
+              <Text style={s.ganadorTexto}>Gana: {resultado.ganador}</Text>
             </View>
 
             <View style={s.vsFila}>
@@ -280,15 +283,18 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     loadingRow: { alignItems: 'center', paddingVertical: spacing.xl },
 
     ganadorBanner: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: spacing.sm,
       backgroundColor: colors.brand,
       borderRadius: radius.md,
       padding: spacing.md,
-      alignItems: 'center',
       marginBottom: spacing.lg,
     },
     ganadorTexto: { ...typography.headline, fontWeight: '700', color: colors.onBrand },
 
-    resultCard: { padding: spacing.md },
+    resultCard: { padding: spacing.md, flex: 1 },
     resultTitulo: { ...typography.caption2, fontWeight: '600', color: colors.tertiaryLabel, marginBottom: spacing.xs },
     resultEntidad: { ...typography.subheadline, fontWeight: '600', color: colors.label },
     resultReal: { ...typography.title3, fontWeight: '700', marginVertical: spacing.xs },

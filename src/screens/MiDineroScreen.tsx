@@ -176,20 +176,22 @@ export default function MiDineroScreen() {
             {posiciones.map((p) => (
               <Card key={p.id} style={s.posicion}>
                 <View style={s.posHeader}>
-                  <Text style={s.posActivo}>{p.activo}</Text>
+                  <Text style={s.posActivo} numberOfLines={1}>{p.activo}</Text>
                   <Text style={[s.posGanancia, p.ganancia >= 0 ? s.verde : s.rojo]}>
                     {p.ganancia >= 0 ? '+' : ''}{p.gananciaPct.toFixed(2)}%
                   </Text>
                 </View>
-                <Text style={s.posDetalle}>
+                <Text style={s.posDetalle} numberOfLines={1}>
                   {p.cantidad} × {formatPesos(p.precioCompra)} → {formatPesos(p.precioActual)} ahora
                 </Text>
-                <Text style={s.posValor}>
-                  Valor actual: {formatPesos(p.valorActual)} · {p.ganancia >= 0 ? '+' : ''}{formatPesos(p.ganancia)}
-                </Text>
-                <Pressable onPress={() => eliminarPosicion(p.id)} hitSlop={8} style={s.eliminar}>
-                  <Ionicons name="trash-outline" size={18} color={colors.systemRed} />
-                </Pressable>
+                <View style={s.posPie}>
+                  <Text style={s.posValor} numberOfLines={1}>
+                    {formatPesos(p.valorActual)} · {p.ganancia >= 0 ? '+' : ''}{formatPesos(p.ganancia)}
+                  </Text>
+                  <Pressable onPress={() => eliminarPosicion(p.id)} hitSlop={8}>
+                    <Ionicons name="trash-outline" size={18} color={colors.systemRed} />
+                  </Pressable>
+                </View>
               </Card>
             ))}
 
@@ -238,13 +240,15 @@ export default function MiDineroScreen() {
               return (
                 <Card key={m.id} style={s.posicion}>
                   <View style={s.posHeader}>
-                    <Text style={s.posActivo}>{m.nombre}</Text>
-                    <Text style={s.posValor}>{formatPesos(m.montoActual)} de {formatPesos(m.montoObjetivo)}</Text>
+                    <Text style={s.posActivo} numberOfLines={1}>{m.nombre}</Text>
+                    <Text style={s.metaPct}>{pct.toFixed(0)}%</Text>
                   </View>
                   <View style={s.progressTrack}>
                     <View style={[s.progressFill, { width: `${pct}%` }]} />
                   </View>
-                  <Text style={s.posDetalle}>Hasta {m.fechaLimite} · {pct.toFixed(0)}%</Text>
+                  <Text style={s.posDetalle} numberOfLines={1}>
+                    {formatPesos(m.montoActual)} de {formatPesos(m.montoObjetivo)} · hasta {m.fechaLimite}
+                  </Text>
 
                   <View style={s.metaAcciones}>
                     {aporteMetaId === m.id ? (
@@ -351,12 +355,19 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     botonTexto: { ...typography.subheadline, fontWeight: '700', color: colors.onBrand },
 
     posicion: { padding: spacing.lg, marginBottom: spacing.md },
-    posHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    posActivo: { ...typography.headline, fontWeight: '700', color: colors.label },
+    posHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md },
+    posActivo: { ...typography.headline, fontWeight: '700', color: colors.label, flex: 1 },
     posGanancia: { ...typography.subheadline, fontWeight: '700' },
     posDetalle: { ...typography.caption1, color: colors.secondaryLabel, marginTop: spacing.xs },
-    posValor: { ...typography.footnote, fontWeight: '600', color: colors.label, marginTop: spacing.xs },
-    eliminar: { position: 'absolute', top: spacing.md, right: spacing.md },
+    posValor: { ...typography.footnote, fontWeight: '600', color: colors.label, flex: 1 },
+    posPie: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: spacing.md,
+      marginTop: spacing.sm,
+    },
+    metaPct: { ...typography.subheadline, fontWeight: '700', color: colors.brand },
 
     progressTrack: {
       height: 8,

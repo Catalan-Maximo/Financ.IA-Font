@@ -227,6 +227,7 @@ export default function App() {
           onClose={() => setPanelAbierto(false)}
           onNavegar={setActiveTab}
           onAbrirFaq={() => setFaqAbierto(true)}
+          onAbrirVersus={() => setVersusAbierto(true)}
           onRehacerTest={rehacerTest}
           onLogout={cerrarSesion}
         />

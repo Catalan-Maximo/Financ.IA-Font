@@ -57,14 +57,16 @@ export default function ChatScreen() {
       <KeyboardAvoidingView
         style={s.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={TAB_BAR_HEIGHT + insets.bottom}
+        keyboardVerticalOffset={insets.bottom}
       >
         <Header text="Chat de Dudas" level="title" style={s.titulo} />
 
         <ScrollView
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: spacing.lg }}
+          contentContainerStyle={{
+            paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.md,
+          }}
         >
           {/* Sugerencias (solo antes del primer mensaje) */}
           {!hayMensajes && (
@@ -101,8 +103,8 @@ export default function ChatScreen() {
           )}
         </ScrollView>
 
-        {/* Barra de entrada */}
-        <View style={[s.barra, { paddingBottom: insets.bottom + spacing.sm }]}>
+        {/* Barra de entrada (reserva espacio para la tab bar inferior) */}
+        <View style={[s.barra, { paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.sm }]}>
           {hayMensajes && (
             <Pressable onPress={limpiar} hitSlop={8} style={s.limpiarBtn}>
               <Ionicons name="trash-outline" size={20} color={colors.tertiaryLabel} />

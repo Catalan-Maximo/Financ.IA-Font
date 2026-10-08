@@ -30,8 +30,6 @@ interface DashboardProps {
   onAbrirDetalleActivo: (activo: Activo) => void;
 }
 
-const MEDALLAS = ['🥇', '🥈', '🥉'];
-
 export default function DashboardScreen({ perfil, onIrAlSimulador, onIrAlAsesor, onAbrirDetalleCripto, onAbrirPack, onAbrirDetalleActivo }: DashboardProps) {
   const { activos, loading, error, limpiarError } = useMercado();
   const { cripto, alertas } = useCripto();
@@ -84,7 +82,11 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onIrAlAsesor,
         onPress={() => onAbrirDetalleActivo(item)}
       >
         <View style={s.filaIzq}>
-          <Text style={s.rank}>{index < 3 ? MEDALLAS[index] : `${index + 1}.`}</Text>
+          {index === 0 ? (
+            <Ionicons name="trophy" size={20} color={colors.systemYellow} style={s.rankIcono} />
+          ) : (
+            <Text style={s.rank}>{index + 1}.</Text>
+          )}
           <View>
             <Text style={s.entidad}>{item.entidad}</Text>
             <Text style={s.tipo}>{item.tipo}</Text>
@@ -120,7 +122,7 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onIrAlAsesor,
         {/* ── Hero: la mejor oportunidad del día ─── */}
         <View style={s.hero}>
           <View style={s.heroTop}>
-            <Text style={s.heroSaludo}>Hola 👋</Text>
+            <Text style={s.heroSaludo}>Hola</Text>
             <View style={s.heroChip}>
               <Text style={s.heroChipTexto}>{perfil}</Text>
             </View>
@@ -279,6 +281,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     filaPressed: { backgroundColor: 'rgba(128,128,128,0.15)' },
     filaIzq: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 },
     rank: { ...typography.title3, width: 34, textAlign: 'center' },
+    rankIcono: { width: 34, textAlign: 'center' },
     entidad: { ...typography.headline, fontWeight: '600', color: colors.label },
     tipo: { ...typography.caption1, color: colors.tertiaryLabel },
     filaDer: { alignItems: 'flex-end' },
