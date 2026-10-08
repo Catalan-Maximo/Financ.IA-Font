@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
+import BotonVolver from '../components/BotonVolver';
 import Screen from '../components/Screen';
 import GraficoBarras, { type PuntoGrafico } from '../components/GraficoBarras';
 import ExplicarDatosIA from '../components/ExplicarDatosIA';
@@ -64,9 +64,7 @@ export default function AccionDetalleScreen({ cotizacion, onVolver }: AccionDeta
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: spacing.lg, paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.xxl }}
       >
-        <Pressable onPress={onVolver} hitSlop={8} style={s.volver}>
-          <Ionicons name="chevron-back" size={22} color={colors.label} />
-        </Pressable>
+        <BotonVolver onPress={onVolver} />
 
         <View style={s.cabecera}>
           <View style={s.cabeceraIzq}>
@@ -75,7 +73,7 @@ export default function AccionDetalleScreen({ cotizacion, onVolver }: AccionDeta
               {cotizacion.variacion24h >= 0 ? '+' : ''}{cotizacion.variacion24h.toFixed(2)}% hoy
             </Text>
           </View>
-          <Text style={s.precio}>${cotizacion.precio.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</Text>
+          <Text style={s.precio} numberOfLines={1}>${cotizacion.precio.toLocaleString('es-AR', { maximumFractionDigits: 2 })}</Text>
         </View>
 
         {/* Gráfico */}
@@ -171,23 +169,14 @@ export default function AccionDetalleScreen({ cotizacion, onVolver }: AccionDeta
 
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
-    volver: {
-      alignSelf: 'flex-start',
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: colors.fill,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: spacing.md,
-    },
     cabecera: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'flex-end',
+      gap: spacing.md,
       marginBottom: spacing.lg,
     },
-    cabeceraIzq: { gap: spacing.xs },
+    cabeceraIzq: { gap: spacing.xs, flexShrink: 1 },
     variacion: { ...typography.footnote, fontWeight: '600' },
     precio: { ...typography.title1, fontWeight: '700', color: colors.label },
 

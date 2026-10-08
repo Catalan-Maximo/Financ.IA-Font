@@ -24,7 +24,15 @@ export default function Badge({ label, tone = 'neutral', numberOfLines, style }:
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
-  return <Text numberOfLines={numberOfLines} style={[s.badge, s[tone], style]}>{label}</Text>;
+  return (
+    <Text
+      numberOfLines={numberOfLines}
+      maxFontSizeMultiplier={1.3}
+      style={[s.badge, s[tone], style]}
+    >
+      {label}
+    </Text>
+  );
 }
 
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>

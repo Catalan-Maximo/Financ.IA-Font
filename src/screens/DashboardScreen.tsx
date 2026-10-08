@@ -19,6 +19,7 @@ import { useTheme } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { radius } from '../theme/radius';
+import { grid } from '../theme/grid';
 import { INFLACION_ESTIMADA_DASHBOARD } from '../constants';
 
 interface DashboardProps {
@@ -53,7 +54,7 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onAbrirDetall
   useEffect(() => {
     if (alertas.length > 0 && !senalesAvisadas.current) {
       senalesAvisadas.current = true;
-      Alert.alert('🔔 Señales cripto', alertas.map((a) => a.mensaje).join('\n\n'));
+      Alert.alert('Señales cripto', alertas.map((a) => a.mensaje).join('\n\n'));
     }
   }, [alertas]);
 
@@ -86,17 +87,17 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onAbrirDetall
           ) : (
             <Text style={s.rank}>{index + 1}.</Text>
           )}
-          <View>
-            <Text style={s.entidad}>{item.entidad}</Text>
-            <Text style={s.tipo}>{item.tipo}</Text>
+          <View style={s.filaInfo}>
+            <Text style={s.entidad} numberOfLines={1} maxFontSizeMultiplier={1.3}>{item.entidad}</Text>
+            <Text style={s.tipo} numberOfLines={1} maxFontSizeMultiplier={1.3}>{item.tipo}</Text>
           </View>
         </View>
         <View style={s.filaDer}>
-          <Text style={[s.real, real > 0 ? s.verde : s.rojo]}>
+          <Text style={[s.real, real > 0 ? s.verde : s.rojo]} numberOfLines={1} maxFontSizeMultiplier={1.3}>
             {real > 0 ? '+' : ''}{real.toFixed(2)}% real
           </Text>
-          <Text style={s.tna}>TNA {item.tna}%</Text>
-          <Text style={[s.veredictoFila, real > 0 ? s.verde : s.rojo]}>
+          <Text style={s.tna} numberOfLines={1} maxFontSizeMultiplier={1.3}>TNA {item.tna}%</Text>
+          <Text style={[s.veredictoFila, real > 0 ? s.verde : s.rojo]} numberOfLines={1} maxFontSizeMultiplier={1.3}>
             {real > 0 ? 'Le gana a la inflación' : 'Pierde con la inflación'}
           </Text>
         </View>
@@ -258,8 +259,9 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
 
     /* ── Secciones ─── */
     seccion: { marginBottom: spacing.md },
-    filaCripto: { flexDirection: 'row', gap: spacing.md },
-    celdaCripto: { flex: 1 },
+    // grid.fila con stretch: las dos cripto tarjetas miden lo mismo
+    filaCripto: { ...grid.fila },
+    celdaCripto: { ...grid.col },
 
     /* ── Lista de rendimientos ─── */
     lista: { padding: 0, marginBottom: spacing.md },
@@ -275,12 +277,13 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       borderTopColor: colors.separator,
     },
     filaPressed: { backgroundColor: 'rgba(128,128,128,0.15)' },
-    filaIzq: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1 },
+    filaIzq: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1, minWidth: 0 },
+    filaInfo: { flex: 1, minWidth: 0 },
     rank: { ...typography.title3, width: 34, textAlign: 'center' },
     rankIcono: { width: 34, textAlign: 'center' },
     entidad: { ...typography.headline, fontWeight: '600', color: colors.label },
     tipo: { ...typography.caption1, color: colors.tertiaryLabel },
-    filaDer: { alignItems: 'flex-end', gap: 2 },
+    filaDer: { alignItems: 'flex-end', gap: 2, flexShrink: 1 },
     veredictoFila: { ...typography.caption2, fontWeight: '600' },
     real: { ...typography.subheadline, fontWeight: '700' },
     verde: { color: colors.systemGreen },

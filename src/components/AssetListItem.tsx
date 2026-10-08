@@ -46,18 +46,18 @@ export default function AssetListItem({ simbolo, nombre, precio, variacion, deta
       disabled={!onPress}
     >
       <View style={[s.avatar, { backgroundColor: avatarColor }]}>
-        <Text style={s.avatarTexto}>{simbolo.substring(0, 2).toUpperCase()}</Text>
+        <Text style={s.avatarTexto} maxFontSizeMultiplier={1.3}>{simbolo.substring(0, 2).toUpperCase()}</Text>
       </View>
 
       <View style={s.centro}>
-        <Text style={s.simbolo}>{simbolo}</Text>
-        {nombre && <Text style={s.nombre}>{nombre}</Text>}
-        {detalle && <Text style={s.nombre}>{detalle}</Text>}
+        <Text style={s.simbolo} numberOfLines={1} maxFontSizeMultiplier={1.3}>{simbolo}</Text>
+        {nombre && <Text style={s.nombre} numberOfLines={1} maxFontSizeMultiplier={1.3}>{nombre}</Text>}
+        {detalle && <Text style={s.nombre} numberOfLines={1} maxFontSizeMultiplier={1.3}>{detalle}</Text>}
       </View>
 
       <View style={s.derecha}>
-        <Text style={s.precio}>{precio}</Text>
-        <Text style={[s.variacion, variacion >= 0 ? s.verde : s.rojo]}>
+        <Text style={s.precio} numberOfLines={1} maxFontSizeMultiplier={1.3}>{precio}</Text>
+        <Text style={[s.variacion, variacion >= 0 ? s.verde : s.rojo]} numberOfLines={1} maxFontSizeMultiplier={1.3}>
           {variacion >= 0 ? '+' : ''}{variacion.toFixed(2)}%
         </Text>
         {badge && <Badge label={badge.texto} tone={badge.tono} style={s.badge} />}
@@ -85,7 +85,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       justifyContent: 'center',
     },
     avatarTexto: { ...typography.subheadline, fontWeight: '700', color: '#FFFFFF' },
-    centro: { flex: 1 },
+    centro: { flex: 1, minWidth: 0 },
     simbolo: { ...typography.headline, fontWeight: '600', color: colors.label },
     nombre: { ...typography.caption1, color: colors.secondaryLabel },
     derecha: { alignItems: 'flex-end', gap: spacing.xs },

@@ -8,6 +8,8 @@ import api from '../lib/api';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
+import BotonVolver from '../components/BotonVolver';
+import Cargando from '../components/Cargando';
 import Screen from '../components/Screen';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import type { RendimientoDTO } from '../domain/inversion';
@@ -16,6 +18,7 @@ import { useTheme } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { radius } from '../theme/radius';
+import { grid } from '../theme/grid';
 
 /** Activos extra que no vienen en /activos/tasas pero sí en el comparador. */
 const EXTRAS = [
@@ -180,9 +183,7 @@ export default function VersusScreen({ onVolver }: VersusScreenProps) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: spacing.lg, paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.xxl }}
       >
-        <Pressable onPress={onVolver} hitSlop={8} style={s.volver}>
-          <Ionicons name="chevron-back" size={22} color={colors.label} />
-        </Pressable>
+        <BotonVolver onPress={onVolver} />
 
         <Header text="Versus" level="title" style={s.titulo} />
         <Text style={s.subtitulo}>Compará dos inversiones y mirá quién gana</Text>
@@ -197,11 +198,7 @@ export default function VersusScreen({ onVolver }: VersusScreenProps) {
           </View>
         </View>
 
-        {calculando && (
-          <View style={s.loadingRow}>
-            <ActivityIndicator size="large" color={colors.brand} />
-          </View>
-        )}
+        {calculando && <Cargando />}
 
         {resultado && !calculando && (
           <>
@@ -262,21 +259,12 @@ export default function VersusScreen({ onVolver }: VersusScreenProps) {
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
     loading: { alignItems: 'center', justifyContent: 'center' },
-    volver: {
-      alignSelf: 'flex-start',
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: colors.fill,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: spacing.md,
-    },
     titulo: { marginBottom: spacing.xs },
     subtitulo: { ...typography.body, color: colors.secondaryLabel, marginBottom: spacing.xl },
 
-    vsFila: { flexDirection: 'row', alignItems: 'stretch', gap: spacing.sm, marginBottom: spacing.lg },
-    lado: { flex: 1 },
+    // grid.fila con stretch: las dos tarjetas de resultado miden siempre lo mismo
+    vsFila: { ...grid.fila, marginBottom: spacing.lg },
+    lado: { ...grid.col },
     vs: { ...typography.headline, fontWeight: '800', color: colors.tertiaryLabel, alignSelf: 'center' },
 
     selector: {
@@ -306,8 +294,6 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       borderBottomColor: colors.separator,
     },
     opcionTexto: { ...typography.body, color: colors.label },
-
-    loadingRow: { alignItems: 'center', paddingVertical: spacing.xl },
 
     ganadorBanner: {
       flexDirection: 'row',

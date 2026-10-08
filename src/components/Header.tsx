@@ -25,7 +25,7 @@ export default function Header({ text, level = 'title', style }: HeaderProps) {
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
-  return <Text style={[s[level], style]}>{text}</Text>;
+  return <Text style={[s[level], style]} maxFontSizeMultiplier={1.3}>{text}</Text>;
 }
 
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>

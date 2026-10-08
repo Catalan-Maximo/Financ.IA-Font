@@ -105,7 +105,7 @@ export default function BottomNav({ activeTab, onChange }: BottomNavProps) {
               active={esActiva}
               color={esActiva ? colors.brand : colors.secondaryLabel}
             />
-            <Text style={[s.label, esActiva && s.labelActiva]}>{tab.label}</Text>
+            <Text style={[s.label, esActiva && s.labelActiva]} maxFontSizeMultiplier={1.3}>{tab.label}</Text>
           </Pressable>
         );
       })}

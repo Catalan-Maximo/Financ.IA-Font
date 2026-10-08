@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
+import BotonVolver from '../components/BotonVolver';
 import Screen from '../components/Screen';
 import GraficoBarras, { type PuntoGrafico } from '../components/GraficoBarras';
 import ExplicarDatosIA from '../components/ExplicarDatosIA';
@@ -43,9 +43,7 @@ export default function ActivoDetalleScreen({ activo, onVolver }: ActivoDetalleP
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: spacing.lg, paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.xxl }}
       >
-        <Pressable onPress={onVolver} hitSlop={8} style={s.volver}>
-          <Ionicons name="chevron-back" size={22} color={colors.label} />
-        </Pressable>
+        <BotonVolver onPress={onVolver} />
 
         <Header text={activo.entidad} level="title" style={s.titulo} />
         <View style={s.datos}>
@@ -91,16 +89,6 @@ export default function ActivoDetalleScreen({ activo, onVolver }: ActivoDetalleP
 
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
-    volver: {
-      alignSelf: 'flex-start',
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: colors.fill,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: spacing.md,
-    },
     titulo: { marginBottom: spacing.md },
     datos: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.lg },
     veredictoBadge: { alignSelf: 'flex-start', marginBottom: spacing.md },

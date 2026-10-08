@@ -36,9 +36,10 @@ export default function Input({ label, value, onChangeText, placeholder, keyboar
 
   return (
     <View style={style}>
-      {label && <Text style={s.label}>{label}</Text>}
+      {label && <Text style={s.label} maxFontSizeMultiplier={1.3}>{label}</Text>}
       <TextInput
         style={s.input}
+        maxFontSizeMultiplier={1.3}
         value={value}
         onChangeText={onChangeText}
         keyboardType={keyboardType}

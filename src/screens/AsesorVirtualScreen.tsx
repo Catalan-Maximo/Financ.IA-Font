@@ -4,7 +4,6 @@ import {
   View,
   Text,
   ScrollView,
-  ActivityIndicator,
   Alert,
   Platform,
   Animated,
@@ -18,6 +17,7 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import Badge from '../components/Badge';
 import Screen from '../components/Screen';
+import Cargando from '../components/Cargando';
 import Entrada from '../components/Entrada';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import useAsesorIA from '../hooks/useAsesorIA';
@@ -197,11 +197,7 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
         </Card>
 
         {/* ── Resultados ─── */}
-        {loading && (
-          <View style={s.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.brand} />
-          </View>
-        )}
+        {loading && <Cargando style={s.loadingContainer} />}
 
         {respuesta && !loading && (
           <Entrada key={respuestaKey} style={s.resultados}>
@@ -256,14 +252,15 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
                     <Text style={s.rendTipo}>{r.tipo} · Riesgo {r.riesgo}</Text>
                   </View>
                   <View style={s.rendDer}>
-                    <Text style={[s.rendReal, r.leGanaALaInflacion ? s.green : s.red]}>
+                    <Text style={[s.rendReal, r.leGanaALaInflacion ? s.green : s.red]} numberOfLines={1}>
                       {r.tasaRealMensual > 0 ? '+' : ''}{r.tasaRealMensual}% real
                     </Text>
-                    {r.peorEscenario != null && r.mejorEscenario != null && (
-                      <Text style={s.rendRango}>
-                        {r.peorEscenario.toFixed(0)}% a +{r.mejorEscenario.toFixed(0)}%
-                      </Text>
-                    )}
+                    {/* Línea fija siempre (— en renta fija): todas las filas miden lo mismo */}
+                    <Text style={s.rendRango}>
+                      {r.peorEscenario != null && r.mejorEscenario != null
+                        ? `${r.peorEscenario.toFixed(0)}% a +${r.mejorEscenario.toFixed(0)}%`
+                        : '—'}
+                    </Text>
                   </View>
                 </View>
               ))}

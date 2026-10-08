@@ -35,11 +35,11 @@ export default function CryptoCard({ estado, onPress }: CryptoCardProps) {
   return (
     <Card style={s.card} onPress={onPress}>
       <View style={s.header}>
-        <Text style={s.nombre}>{nombre}</Text>
+        <Text style={s.nombre} numberOfLines={1} maxFontSizeMultiplier={1.3}>{nombre}</Text>
         <Badge label={estado.veredicto} tone={TONO_VEREDICTO[estado.veredicto] ?? 'warning'} />
       </View>
 
-      <Text style={s.precio}>${estado.precio.toLocaleString('es-AR')}</Text>
+      <Text style={s.precio} numberOfLines={1} maxFontSizeMultiplier={1.3}>${estado.precio.toLocaleString('es-AR')}</Text>
 
       <View style={s.fila}>
         <Text style={s.label}>RSI (14)</Text>
@@ -62,7 +62,8 @@ export default function CryptoCard({ estado, onPress }: CryptoCardProps) {
 
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
-    card: { padding: spacing.lg, marginBottom: spacing.md },
+    // flex: 1 estira la tarjeta al alto de la celda: las dos quedan simétricas
+    card: { padding: spacing.lg, marginBottom: spacing.md, flex: 1 },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
     nombre: { ...typography.callout, fontWeight: '600', color: colors.label },
     precio: { ...typography.title3, fontWeight: '700', color: colors.label, marginBottom: spacing.md },

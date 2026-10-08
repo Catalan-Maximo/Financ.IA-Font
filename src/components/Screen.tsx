@@ -30,5 +30,9 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       flex: 1,
       backgroundColor: colors.systemBackground,
       paddingHorizontal: spacing.lg,
+      // En tablet el contenido no se estira: queda centrado como en el teléfono
+      width: '100%',
+      maxWidth: 560,
+      alignSelf: 'center',
     },
   });

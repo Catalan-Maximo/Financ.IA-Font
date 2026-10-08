@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
@@ -7,6 +7,7 @@ import Header from '../components/Header';
 import ExplicarDatosIA from '../components/ExplicarDatosIA';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
+import BotonVolver from '../components/BotonVolver';
 import Screen from '../components/Screen';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import type { CriptoEstado, VelaDiaria } from '../domain/cripto';
@@ -75,20 +76,14 @@ export default function CriptoDetalleScreen({ estado, onVolver }: CriptoDetalleP
           paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.xxl,
         }}
       >
-        <Pressable
-          style={({ pressed }) => [s.volver, pressed && s.volverPressed]}
-          onPress={onVolver}
-          hitSlop={8}
-        >
-          <Ionicons name="chevron-back" size={22} color={colors.label} />
-        </Pressable>
+        <BotonVolver onPress={onVolver} />
 
         {/* Encabezado */}
         <View style={s.encabezado}>
           <Header text={nombre} level="title" />
           <Badge label={estado.veredicto} tone={TONO_VEREDICTO[estado.veredicto] ?? 'warning'} />
         </View>
-        <Text style={s.precio}>${estado.precio.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</Text>
+        <Text style={s.precio} numberOfLines={1}>${estado.precio.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</Text>
         {estado.cambio3d != null && (
           <Text style={[s.cambio, estado.cambio3d >= 0 ? s.verde : s.rojo]}>
             {estado.cambio3d >= 0 ? '+' : ''}{estado.cambio3d.toFixed(1)}% últimos 3 días
@@ -178,11 +173,14 @@ export default function CriptoDetalleScreen({ estado, onVolver }: CriptoDetalleP
 
         {/* Advertencia de volatilidad */}
         <Card style={s.advertencia}>
-          <Text style={s.advertenciaTexto}>
-            ⚠️ Las criptomonedas son muy volátiles: pueden bajar 20% o más en pocos días.
-            Este análisis técnico es informativo y no garantiza resultados. Invertí solo
-            lo que estés dispuesto a perder.
-          </Text>
+          <View style={s.advertenciaFila}>
+            <Ionicons name="warning" size={18} color={colors.systemYellow} />
+            <Text style={s.advertenciaTexto}>
+              Las criptomonedas son muy volátiles: pueden bajar 20% o más en pocos días.
+              Este análisis técnico es informativo y no garantiza resultados. Invertí solo
+              lo que estés dispuesto a perder.
+            </Text>
+          </View>
         </Card>
 
         <ExplicarDatosIA datos={
@@ -199,17 +197,6 @@ export default function CriptoDetalleScreen({ estado, onVolver }: CriptoDetalleP
 
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
-    volver: {
-      alignSelf: 'flex-start',
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: colors.fill,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: spacing.xl,
-    },
-    volverPressed: { opacity: 0.6 },
     encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
     precio: { ...typography.title1, fontWeight: '700', color: colors.label, marginBottom: spacing.xs },
     cambio: { ...typography.footnote, marginBottom: spacing.xl },
@@ -260,5 +247,6 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       marginBottom: spacing.lg,
       borderColor: colors.systemYellow,
     },
-    advertenciaTexto: { ...typography.footnote, color: colors.label, lineHeight: 20 },
+    advertenciaFila: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-start' },
+    advertenciaTexto: { ...typography.footnote, color: colors.label, lineHeight: 20, flex: 1 },
   });

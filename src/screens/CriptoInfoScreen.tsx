@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import Header from '../components/Header';
 import Card from '../components/Card';
+import BotonVolver from '../components/BotonVolver';
 import Screen from '../components/Screen';
 import GraficoBarras, { type PuntoGrafico } from '../components/GraficoBarras';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
@@ -40,12 +40,10 @@ export default function CriptoInfoScreen({ info, onVolver }: CriptoInfoProps) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: spacing.lg, paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.xxl }}
       >
-        <Pressable onPress={onVolver} hitSlop={8} style={s.volver}>
-          <Ionicons name="chevron-back" size={22} color={colors.label} />
-        </Pressable>
+        <BotonVolver onPress={onVolver} />
 
         <Header text={info.nombre} level="title" style={s.titulo} />
-        <Text style={s.precio}>${info.precio.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</Text>
+        <Text style={s.precio} numberOfLines={1}>${info.precio.toLocaleString('es-AR', { maximumFractionDigits: 4 })}</Text>
         <Text style={[s.variacion, info.variacion24h >= 0 ? s.verde : s.rojo]}>
           {info.variacion24h >= 0 ? '+' : ''}{info.variacion24h.toFixed(2)}% últimas 24h
         </Text>
@@ -71,16 +69,6 @@ export default function CriptoInfoScreen({ info, onVolver }: CriptoInfoProps) {
 
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
-    volver: {
-      alignSelf: 'flex-start',
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: colors.fill,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: spacing.md,
-    },
     titulo: { marginBottom: spacing.sm },
     precio: { ...typography.title1, fontWeight: '700', color: colors.label },
     variacion: { ...typography.footnote, fontWeight: '600', marginBottom: spacing.lg },

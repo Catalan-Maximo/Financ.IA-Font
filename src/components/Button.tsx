@@ -94,7 +94,7 @@ export default function Button({
       ) : (
         <>
           {icon && <Ionicons name={icon} size={20} color={colors.onBrand} />}
-          <Text style={[s.text, textStyle]}>{title}</Text>
+          <Text style={[s.text, textStyle]} maxFontSizeMultiplier={1.3}>{title}</Text>
         </>
       )}
     </AnimatedPressable>

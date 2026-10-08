@@ -42,7 +42,7 @@ const PREGUNTAS = [
   },
   {
     pregunta: '¿Cómo rehago el test del inversor?',
-    respuesta: 'Abrí el menú (☰) y tocá "Rehacer test del inversor".',
+    respuesta: 'Abrí el menú (ícono de tres rayas, arriba a la izquierda) y tocá "Rehacer test del inversor".',
   },
   {
     pregunta: '¿Qué significan BUY, WATCH y AVOID en cripto?',

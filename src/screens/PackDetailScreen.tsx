@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import ExplicarDatosIA from '../components/ExplicarDatosIA';
+import BotonVolver from '../components/BotonVolver';
 import Screen from '../components/Screen';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import type { PackCotizacion } from '../domain/mercados';
@@ -42,13 +42,7 @@ export default function PackDetailScreen({ pack, onVolver }: PackDetailProps) {
           paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.xxl,
         }}
       >
-        <Pressable
-          style={({ pressed }) => [s.volver, pressed && s.volverPressed]}
-          onPress={onVolver}
-          hitSlop={8}
-        >
-          <Ionicons name="chevron-back" size={22} color={colors.label} />
-        </Pressable>
+        <BotonVolver onPress={onVolver} />
 
         <View style={s.encabezado}>
           <Header text={pack.nombre} level="title" />
@@ -87,17 +81,6 @@ export default function PackDetailScreen({ pack, onVolver }: PackDetailProps) {
 
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
-    volver: {
-      alignSelf: 'flex-start',
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: colors.fill,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: spacing.xl,
-    },
-    volverPressed: { opacity: 0.6 },
     encabezado: {
       flexDirection: 'row',
       alignItems: 'center',

@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Screen from '../components/Screen';
+import EstadoVacio from '../components/EstadoVacio';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import useMiDinero from '../hooks/useMiDinero';
 import { ACTIVOS_PORTFOLIO, CATEGORIAS_GASTO } from '../domain/midinero';
@@ -213,7 +214,11 @@ export default function MiDineroScreen() {
             ))}
 
             {posiciones.length === 0 && (
-              <Text style={s.vacio}>Cargá tu primera posición para seguir tu plata real.</Text>
+              <EstadoVacio
+                icono="briefcase-outline"
+                titulo="Todavía no tenés posiciones"
+                detalle="Cargá tu primera posición para seguir tu plata real."
+              />
             )}
           </>
         )}
@@ -296,7 +301,11 @@ export default function MiDineroScreen() {
             })}
 
             {metas.length === 0 && (
-              <Text style={s.vacio}>Creá tu primera meta y empezá a medir tu progreso.</Text>
+              <EstadoVacio
+                icono="flag-outline"
+                titulo="Todavía no tenés metas"
+                detalle="Creá tu primera meta y empezá a medir tu progreso."
+              />
             )}
           </>
         )}
@@ -360,7 +369,7 @@ export default function MiDineroScreen() {
                       <View style={s.categoriaTrack}>
                         <View style={[s.categoriaFill, { width: `${ancho}%` }]} />
                       </View>
-                      <Text style={s.categoriaMonto}>{formatPesos(monto)}</Text>
+                      <Text style={s.categoriaMonto} numberOfLines={1}>{formatPesos(monto)}</Text>
                     </View>
                   );
                 })}
@@ -374,7 +383,7 @@ export default function MiDineroScreen() {
                 {resumen.metasMensuales.map((m) => (
                   <View key={m.nombre} style={s.categoriaFila}>
                     <Text style={s.categoriaNombre} numberOfLines={1}>{m.nombre}</Text>
-                    <Text style={s.categoriaMonto}>
+                    <Text style={s.categoriaMonto} numberOfLines={1}>
                       {formatPesos(m.porMes)}/mes · faltan {formatPesos(m.faltante)}
                     </Text>
                   </View>
@@ -449,7 +458,11 @@ export default function MiDineroScreen() {
             ))}
 
             {gastos.length === 0 && (
-              <Text style={s.vacio}>Cargá tus gastos del mes para ver en qué se va tu plata.</Text>
+              <EstadoVacio
+                icono="receipt-outline"
+                titulo="Todavía no tenés gastos"
+                detalle="Cargá tus gastos del mes para ver en qué se va tu plata."
+              />
             )}
           </>
         )}
@@ -581,7 +594,6 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
 
     verde: { color: colors.systemGreen },
     rojo: { color: colors.systemRed },
-    vacio: { ...typography.footnote, color: colors.tertiaryLabel, textAlign: 'center', marginTop: spacing.xl },
 
     ingresoFila: {
       flexDirection: 'row',
@@ -606,5 +618,12 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       overflow: 'hidden',
     },
     categoriaFill: { height: '100%', backgroundColor: colors.brand, borderRadius: 4 },
-    categoriaMonto: { ...typography.footnote, fontWeight: '600', color: colors.label, textAlign: 'right', width: 90 },
+    categoriaMonto: {
+      ...typography.footnote,
+      fontWeight: '600',
+      color: colors.label,
+      textAlign: 'right',
+      flexShrink: 1,
+      minWidth: 80,
+    },
   });

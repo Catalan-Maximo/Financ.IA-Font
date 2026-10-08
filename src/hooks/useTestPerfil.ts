@@ -52,7 +52,7 @@ export default function useTestPerfil(onTestComplete: (perfil: string) => void) 
       await guardarPerfilSeguro(perfilAsignado);
 
       setAviso({
-        titulo: '¡Test Completado! 🎉',
+        titulo: 'Test Completado',
         mensaje: `Tu puntaje: ${nuevoPuntaje} puntos. Perfil asignado: ${perfilAsignado}`,
       });
       onTestComplete(perfilAsignado);
@@ -63,7 +63,7 @@ export default function useTestPerfil(onTestComplete: (perfil: string) => void) 
       await guardarPerfilSeguro(perfilLocal);
 
       setAviso({
-        titulo: 'Modo Offline ⚠️',
+        titulo: 'Modo Offline',
         mensaje: `No se pudo conectar al backend, pero tu perfil fue asignado localmente como: ${perfilLocal}`,
       });
       onTestComplete(perfilLocal);
