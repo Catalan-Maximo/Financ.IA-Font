@@ -24,13 +24,12 @@ import { INFLACION_ESTIMADA_DASHBOARD } from '../constants';
 interface DashboardProps {
   perfil: string;
   onIrAlSimulador: () => void;
-  onIrAlAsesor: () => void;
   onAbrirDetalleCripto: (estado: CriptoEstado) => void;
   onAbrirPack: (pack: PackCotizacion) => void;
   onAbrirDetalleActivo: (activo: Activo) => void;
 }
 
-export default function DashboardScreen({ perfil, onIrAlSimulador, onIrAlAsesor, onAbrirDetalleCripto, onAbrirPack, onAbrirDetalleActivo }: DashboardProps) {
+export default function DashboardScreen({ perfil, onIrAlSimulador, onAbrirDetalleCripto, onAbrirPack, onAbrirDetalleActivo }: DashboardProps) {
   const { activos, loading, error, limpiarError } = useMercado();
   const { cripto, alertas } = useCripto();
   const { packs } = usePacks();
@@ -97,6 +96,9 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onIrAlAsesor,
             {real > 0 ? '+' : ''}{real.toFixed(2)}% real
           </Text>
           <Text style={s.tna}>TNA {item.tna}%</Text>
+          <Text style={[s.veredictoFila, real > 0 ? s.verde : s.rojo]}>
+            {real > 0 ? 'Le gana a la inflación' : 'Pierde con la inflación'}
+          </Text>
         </View>
       </Pressable>
     );
@@ -208,12 +210,6 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onIrAlAsesor,
             onPress={onIrAlSimulador}
             style={s.footerBtn}
           />
-          <Button
-            title="Asesor Virtual"
-            icon="sparkles-outline"
-            onPress={onIrAlAsesor}
-            style={s.footerBtn}
-          />
         </View>
       </ScrollView>
     </Screen>
@@ -284,7 +280,8 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     rankIcono: { width: 34, textAlign: 'center' },
     entidad: { ...typography.headline, fontWeight: '600', color: colors.label },
     tipo: { ...typography.caption1, color: colors.tertiaryLabel },
-    filaDer: { alignItems: 'flex-end' },
+    filaDer: { alignItems: 'flex-end', gap: 2 },
+    veredictoFila: { ...typography.caption2, fontWeight: '600' },
     real: { ...typography.subheadline, fontWeight: '700' },
     verde: { color: colors.systemGreen },
     rojo: { color: colors.systemRed },

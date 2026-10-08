@@ -56,6 +56,10 @@ export default function GraficoBarras({ puntos, alto = 110, prefijo = '' }: Graf
         <Text style={s.etiqueta}>{formato(min)}</Text>
         <Text style={s.etiqueta}>{formato(max)}</Text>
       </View>
+      <View style={s.fechas}>
+        <Text style={s.etiqueta}>{puntos[0].fecha}</Text>
+        <Text style={s.etiqueta}>{puntos[puntos.length - 1].fecha}</Text>
+      </View>
     </View>
   );
 }
@@ -72,6 +76,11 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     etiquetas: {
       flexDirection: 'row',
       justifyContent: 'space-between',
+    },
+    fechas: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginTop: 2,
     },
     etiqueta: { ...typography.caption2, color: colors.tertiaryLabel },
   });

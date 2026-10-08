@@ -7,11 +7,11 @@
 /** Perfiles posibles. */
 export type PerfilInversor = 'Conservador' | 'Moderado' | 'Agresivo';
 
-/** Rangos de puntuación (8 a 49). */
+/** Rangos de puntuación (test breve de 6 preguntas: 6 a 29). */
 export const RANGOS_PUNTAJE = {
-  conservadorMax: 18,
-  moderadoMax: 35,
-  agresivoMin: 36,
+  conservadorMax: 13,
+  moderadoMax: 23,
+  agresivoMin: 24,
 } as const;
 
 /**

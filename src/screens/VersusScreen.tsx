@@ -81,6 +81,9 @@ function SelectorActivo({
   );
 }
 
+const formatPesos = (v: number) =>
+  `$${v.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 /** Tarjeta de resultado de un lado del versus. */
 function CardResultado({ titulo, r }: { titulo: string; r: RendimientoDTO }) {
   const { colors } = useTheme();
@@ -218,6 +221,30 @@ export default function VersusScreen({ onVolver }: VersusScreenProps) {
               </View>
             )}
 
+            {/* Gráfico de ganancia real proyectada: las dos barras lado a lado */}
+            <Card style={s.graficoCard}>
+              <Header text="Ganancia real proyectada" level="section" style={s.graficoTitulo} />
+              {(() => {
+                const ga = resultado.activoA.gananciaReal;
+                const gb = resultado.activoB.gananciaReal;
+                const maxAbs = Math.max(Math.abs(ga), Math.abs(gb), 1);
+                const altura = (v: number) => Math.max((Math.abs(v) / maxAbs) * 90, 4);
+                return (
+                  <View style={s.graficoFila}>
+                    {[{ nombre: resultado.activoA.entidad, valor: ga }, { nombre: resultado.activoB.entidad, valor: gb }].map((item) => (
+                      <View key={item.nombre} style={s.barraCol}>
+                        <Text style={[s.barraValor, item.valor >= 0 ? s.verde : s.rojo]} numberOfLines={1}>
+                          {item.valor >= 0 ? '+' : ''}{formatPesos(item.valor)}
+                        </Text>
+                        <View style={[s.barraG, { height: altura(item.valor), backgroundColor: item.valor >= 0 ? colors.systemGreen : colors.systemRed }]} />
+                        <Text style={s.barraNombre} numberOfLines={1}>{item.nombre}</Text>
+                      </View>
+                    ))}
+                  </View>
+                );
+              })()}
+            </Card>
+
             <Card style={s.mensajeCard}>
               <Text style={s.mensajeTexto}>{resultado.mensaje}</Text>
             </Card>
@@ -314,4 +341,17 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     mensajeCard: { padding: spacing.md, marginBottom: spacing.md },
     mensajeTexto: { ...typography.footnote, color: colors.label, lineHeight: 18 },
     nota: { ...typography.caption2, color: colors.tertiaryLabel, textAlign: 'center' },
+
+    graficoCard: { padding: spacing.lg, marginBottom: spacing.lg },
+    graficoTitulo: { marginBottom: spacing.lg },
+    graficoFila: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      alignItems: 'flex-end',
+      gap: spacing.xl,
+    },
+    barraCol: { flex: 1, alignItems: 'center', gap: spacing.xs, justifyContent: 'flex-end' },
+    barraValor: { ...typography.footnote, fontWeight: '700' },
+    barraG: { width: '70%', borderRadius: 6 },
+    barraNombre: { ...typography.caption1, color: colors.secondaryLabel, textAlign: 'center' },
   });

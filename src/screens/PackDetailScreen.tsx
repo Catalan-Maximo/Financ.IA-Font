@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
-import Button from '../components/Button';
+import ExplicarDatosIA from '../components/ExplicarDatosIA';
 import Screen from '../components/Screen';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import type { PackCotizacion } from '../domain/mercados';
@@ -22,14 +22,13 @@ const TONO_RIESGO: Record<string, 'success' | 'warning' | 'danger'> = {
 interface PackDetailProps {
   pack: PackCotizacion;
   onVolver: () => void;
-  onSimular: () => void;
 }
 
 /**
  * Detalle de un pack: variación ponderada y composición con
  * porcentajes reales de la base de datos.
  */
-export default function PackDetailScreen({ pack, onVolver, onSimular }: PackDetailProps) {
+export default function PackDetailScreen({ pack, onVolver }: PackDetailProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const s = useMemo(() => makeStyles(colors), [colors]);
@@ -77,13 +76,10 @@ export default function PackDetailScreen({ pack, onVolver, onSimular }: PackDeta
           ))}
         </Card>
 
-        <Button
-          title="Simular Inversión"
-          icon="calculator-outline"
-          haptics
-          onPress={onSimular}
-          style={s.boton}
-        />
+        <ExplicarDatosIA datos={
+          `Pack "${pack.nombre}" (riesgo ${pack.riesgo}): hoy rindió ${pack.variacion24h >= 0 ? '+' : ''}${pack.variacion24h.toFixed(2)}%. ` +
+          `Composición: ${pack.composicion.map((c) => `${c.ticker} ${c.porcentaje}%`).join(', ')}.`
+        } />
       </ScrollView>
     </Screen>
   );

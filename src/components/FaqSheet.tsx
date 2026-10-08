@@ -23,7 +23,7 @@ const PREGUNTAS = [
   {
     pregunta: '¿Cómo se calcula mi perfil de inversor?',
     respuesta:
-      'Completás el test de 10 preguntas y, según tus respuestas, te clasificamos como Conservador, Moderado o Agresivo.',
+      'Completás un test breve de 6 preguntas y, según tus respuestas, te clasificamos como Conservador, Moderado o Agresivo.',
   },
   {
     pregunta: '¿Qué es la TNA?',

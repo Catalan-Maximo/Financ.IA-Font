@@ -9,13 +9,13 @@ import Card from '../components/Card';
 import Screen from '../components/Screen';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import useMiDinero from '../hooks/useMiDinero';
-import { ACTIVOS_PORTFOLIO } from '../domain/midinero';
+import { ACTIVOS_PORTFOLIO, CATEGORIAS_GASTO } from '../domain/midinero';
 import { useTheme } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { radius } from '../theme/radius';
 
-type TabMiDinero = 'portafolio' | 'metas';
+type TabMiDinero = 'portafolio' | 'metas' | 'gastos';
 
 const formatPesos = (v: number) =>
   `$${v.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -25,10 +25,11 @@ const formatPesos = (v: number) =>
  * de ahorro con barra de progreso.
  */
 export default function MiDineroScreen() {
-  const [tab, setTab] = useState<TabMiDinero>('portafolio');
+  const [tab, setTab] = useState<TabMiDinero>('gastos');
   const {
-    posiciones, metas, loading,
+    posiciones, metas, gastos, resumen, loading,
     agregarPosicion, eliminarPosicion, crearMeta, aportarMeta, eliminarMeta,
+    agregarGasto, eliminarGasto, guardarIngreso,
   } = useMiDinero();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -47,6 +48,14 @@ export default function MiDineroScreen() {
   // Aporte inline por meta
   const [aporteMetaId, setAporteMetaId] = useState<number | null>(null);
   const [aporteMonto, setAporteMonto] = useState('');
+
+  // Formulario de gasto
+  const [categoriaGasto, setCategoriaGasto] = useState(CATEGORIAS_GASTO[0]);
+  const [descripcionGasto, setDescripcionGasto] = useState('');
+  const [montoGasto, setMontoGasto] = useState('');
+
+  // Ingreso mensual
+  const [ingresoTexto, setIngresoTexto] = useState('');
 
   const agregarPos = async () => {
     const cant = parseFloat(cantidad);
@@ -104,14 +113,14 @@ export default function MiDineroScreen() {
 
         {/* Top Tabs */}
         <View style={s.tabs}>
-          {(['portafolio', 'metas'] as TabMiDinero[]).map((t) => (
+          {(['gastos', 'metas', 'portafolio'] as TabMiDinero[]).map((t) => (
             <Pressable
               key={t}
               onPress={() => setTab(t)}
               style={[s.tab, tab === t && s.tabActiva]}
             >
               <Text style={[s.tabTexto, tab === t && s.tabTextoActiva]}>
-                {t === 'portafolio' ? 'Portafolio' : 'Metas'}
+                {t === 'gastos' ? 'Gastos' : t === 'metas' ? 'Metas' : 'Portafolio'}
               </Text>
             </Pressable>
           ))}
@@ -184,6 +193,14 @@ export default function MiDineroScreen() {
                 <Text style={s.posDetalle} numberOfLines={1}>
                   {p.cantidad} × {formatPesos(p.precioCompra)} → {formatPesos(p.precioActual)} ahora
                 </Text>
+                {p.alerta && (
+                  <View style={s.stopLoss}>
+                    <Ionicons name="warning" size={16} color={colors.systemRed} />
+                    <Text style={s.stopLossTexto}>
+                      Stop-loss: cayó más del 10% desde tu compra
+                    </Text>
+                  </View>
+                )}
                 <View style={s.posPie}>
                   <Text style={s.posValor} numberOfLines={1}>
                     {formatPesos(p.valorActual)} · {p.ganancia >= 0 ? '+' : ''}{formatPesos(p.ganancia)}
@@ -283,6 +300,159 @@ export default function MiDineroScreen() {
             )}
           </>
         )}
+
+        {tab === 'gastos' && (
+          <>
+            {/* Resumen del mes */}
+            {resumen && (
+              <Card style={s.resumen}>
+                <Header text="Este mes" level="section" style={s.formTitulo} />
+
+                <Text style={s.resumenLabel}>Ingreso mensual</Text>
+                <View style={s.ingresoFila}>
+                  <TextInput
+                    style={[s.input, s.ingresoInput]}
+                    value={ingresoTexto || (resumen.ingreso > 0 ? String(resumen.ingreso) : '')}
+                    onChangeText={setIngresoTexto}
+                    keyboardType="numeric"
+                    placeholder="Declarar ingreso"
+                    placeholderTextColor={colors.tertiaryLabel}
+                  />
+                  <Pressable
+                    style={[s.boton, s.botonOk]}
+                    onPress={() => {
+                      const m = parseFloat(ingresoTexto);
+                      if (m > 0) guardarIngreso(m);
+                    }}
+                  >
+                    <Text style={s.botonTexto}>OK</Text>
+                  </Pressable>
+                </View>
+
+                <View style={s.resumenDivisor} />
+
+                <View style={s.resumenFila}>
+                  <Text style={s.resumenLabel}>Total gastado</Text>
+                  <Text style={s.resumenValor} numberOfLines={1}>{formatPesos(resumen.total)}</Text>
+                </View>
+                <View style={s.resumenFila}>
+                  <Text style={s.resumenLabel}>Te sobra</Text>
+                  <Text
+                    style={[s.resumenValor, (resumen.sobra ?? 0) >= 0 ? s.verde : s.rojo]}
+                    numberOfLines={1}
+                  >
+                    {resumen.sobra != null ? formatPesos(resumen.sobra) : 'Declará tu ingreso'}
+                  </Text>
+                </View>
+              </Card>
+            )}
+
+            {/* Por categoría */}
+            {resumen && Object.keys(resumen.porCategoria).length > 0 && (
+              <Card style={s.posicion}>
+                <Header text="Gastos por categoría" level="section" style={s.formTitulo} />
+                {Object.entries(resumen.porCategoria).map(([cat, monto]) => {
+                  const maxCat = Math.max(...Object.values(resumen.porCategoria), 1);
+                  const ancho = Math.max((monto / maxCat) * 100, 6);
+                  return (
+                    <View key={cat} style={s.categoriaFila}>
+                      <Text style={s.categoriaNombre}>{cat}</Text>
+                      <View style={s.categoriaTrack}>
+                        <View style={[s.categoriaFill, { width: `${ancho}%` }]} />
+                      </View>
+                      <Text style={s.categoriaMonto}>{formatPesos(monto)}</Text>
+                    </View>
+                  );
+                })}
+              </Card>
+            )}
+
+            {/* Metas: cuánto necesito por mes */}
+            {resumen && resumen.metasMensuales.length > 0 && (
+              <Card style={s.posicion}>
+                <Header text="Para tus metas" level="section" style={s.formTitulo} />
+                {resumen.metasMensuales.map((m) => (
+                  <View key={m.nombre} style={s.categoriaFila}>
+                    <Text style={s.categoriaNombre} numberOfLines={1}>{m.nombre}</Text>
+                    <Text style={s.categoriaMonto}>
+                      {formatPesos(m.porMes)}/mes · faltan {formatPesos(m.faltante)}
+                    </Text>
+                  </View>
+                ))}
+              </Card>
+            )}
+
+            {/* Formulario de gasto */}
+            <Card style={s.form}>
+              <Header text="Agregar gasto" level="section" style={s.formTitulo} />
+              <View style={s.chips}>
+                {CATEGORIAS_GASTO.map((c) => (
+                  <Pressable
+                    key={c}
+                    onPress={() => setCategoriaGasto(c)}
+                    style={[s.chip, categoriaGasto === c && s.chipActivo]}
+                  >
+                    <Text style={[s.chipTexto, categoriaGasto === c && s.chipTextoActivo]}>{c}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <View style={s.filaInputs}>
+                <TextInput
+                  style={s.input}
+                  value={descripcionGasto}
+                  onChangeText={setDescripcionGasto}
+                  placeholder="Descripción"
+                  placeholderTextColor={colors.tertiaryLabel}
+                />
+                <TextInput
+                  style={s.input}
+                  value={montoGasto}
+                  onChangeText={setMontoGasto}
+                  keyboardType="numeric"
+                  placeholder="Monto $"
+                  placeholderTextColor={colors.tertiaryLabel}
+                />
+              </View>
+              <Pressable
+                style={({ pressed }) => [s.boton, pressed && s.botonPressed]}
+                onPress={async () => {
+                  const m = parseFloat(montoGasto);
+                  if (!m) {
+                    Alert.alert('Error', 'Poné el monto del gasto.');
+                    return;
+                  }
+                  await agregarGasto(categoriaGasto, descripcionGasto, m);
+                  setMontoGasto('');
+                  setDescripcionGasto('');
+                }}
+              >
+                <Text style={s.botonTexto}>Agregar</Text>
+              </Pressable>
+            </Card>
+
+            {/* Lista de gastos */}
+            {gastos.map((g) => (
+              <Card key={g.id} style={s.posicion}>
+                <View style={s.posHeader}>
+                  <Text style={s.posActivo} numberOfLines={1}>
+                    {g.categoria}{g.descripcion ? ` · ${g.descripcion}` : ''}
+                  </Text>
+                  <Text style={s.posValor}>{formatPesos(g.monto)}</Text>
+                </View>
+                <View style={s.posPie}>
+                  <Text style={s.posDetalle}>{g.fecha}</Text>
+                  <Pressable onPress={() => eliminarGasto(g.id)} hitSlop={8}>
+                    <Ionicons name="trash-outline" size={18} color={colors.systemRed} />
+                  </Pressable>
+                </View>
+              </Card>
+            ))}
+
+            {gastos.length === 0 && (
+              <Text style={s.vacio}>Cargá tus gastos del mes para ver en qué se va tu plata.</Text>
+            )}
+          </>
+        )}
       </ScrollView>
     </Screen>
   );
@@ -306,9 +476,20 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     tabTextoActiva: { color: colors.label, fontWeight: '600' },
 
     resumen: { padding: spacing.lg, marginBottom: spacing.lg },
-    resumenFila: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.xs },
+    resumenFila: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: spacing.md,
+      marginTop: spacing.sm,
+    },
     resumenLabel: { ...typography.footnote, color: colors.secondaryLabel },
-    resumenValor: { ...typography.title3, fontWeight: '700', color: colors.label },
+    resumenValor: { ...typography.title3, fontWeight: '700', color: colors.label, flexShrink: 1, textAlign: 'right' },
+    resumenDivisor: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: colors.separator,
+      marginVertical: spacing.md,
+    },
 
     form: { padding: spacing.lg, marginBottom: spacing.lg },
     formTitulo: { marginBottom: spacing.md },
@@ -368,6 +549,17 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       marginTop: spacing.sm,
     },
     metaPct: { ...typography.subheadline, fontWeight: '700', color: colors.brand },
+    stopLoss: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      backgroundColor: colors.dangerBg,
+      borderRadius: radius.sm,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      marginTop: spacing.sm,
+    },
+    stopLossTexto: { ...typography.caption1, fontWeight: '600', color: colors.systemRed, flex: 1 },
 
     progressTrack: {
       height: 8,
@@ -390,4 +582,29 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     verde: { color: colors.systemGreen },
     rojo: { color: colors.systemRed },
     vacio: { ...typography.footnote, color: colors.tertiaryLabel, textAlign: 'center', marginTop: spacing.xl },
+
+    ingresoFila: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginTop: spacing.xs,
+    },
+    ingresoInput: { flex: 1 },
+    botonOk: { paddingVertical: spacing.sm, paddingHorizontal: spacing.xl, alignSelf: 'stretch' },
+    categoriaFila: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginTop: spacing.sm,
+    },
+    categoriaNombre: { ...typography.footnote, color: colors.label, flex: 1 },
+    categoriaTrack: {
+      flex: 1.5,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.tertiarySystemBackground,
+      overflow: 'hidden',
+    },
+    categoriaFill: { height: '100%', backgroundColor: colors.brand, borderRadius: 4 },
+    categoriaMonto: { ...typography.footnote, fontWeight: '600', color: colors.label, textAlign: 'right', width: 90 },
   });

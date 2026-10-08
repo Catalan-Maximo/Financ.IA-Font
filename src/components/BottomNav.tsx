@@ -12,7 +12,7 @@ import { spacing } from '../theme/spacing';
 export const TAB_BAR_HEIGHT = 50;
 
 /** Pestañas disponibles en la navegación inferior. */
-export type TabKey = 'dashboard' | 'mercados' | 'midinero' | 'chat' | 'simulador' | 'asesor';
+export type TabKey = 'dashboard' | 'mercados' | 'midinero' | 'chat' | 'simulador';
 
 interface BottomNavProps {
   /** Pestaña activa en este momento. */
@@ -26,8 +26,7 @@ const TABS: { key: TabKey; icono: keyof typeof Ionicons.glyphMap; iconoActivo: k
   { key: 'mercados', icono: 'stats-chart-outline', iconoActivo: 'stats-chart', label: 'Mercados' },
   { key: 'midinero', icono: 'wallet-outline', iconoActivo: 'wallet', label: 'Mi Dinero' },
   { key: 'chat', icono: 'chatbubbles-outline', iconoActivo: 'chatbubbles', label: 'Chat' },
-  { key: 'simulador', icono: 'calculator-outline', iconoActivo: 'calculator', label: 'Simulador' },
-  { key: 'asesor', icono: 'sparkles-outline', iconoActivo: 'sparkles', label: 'Asesor' },
+  { key: 'simulador', icono: 'calculator-outline', iconoActivo: 'calculator', label: 'Simular' },
 ];
 
 const spring = { tension: 250, friction: 32, useNativeDriver: true };

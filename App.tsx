@@ -4,7 +4,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import TestPerfilScreen from './src/screens/TestPerfilScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
-import SimuladorScreen from './src/screens/SimuladorScreen';
 import AsesorVirtualScreen from './src/screens/AsesorVirtualScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
@@ -14,6 +13,9 @@ import ChatScreen from './src/screens/ChatScreen';
 import PackDetailScreen from './src/screens/PackDetailScreen';
 import VersusScreen from './src/screens/VersusScreen';
 import ActivoDetalleScreen from './src/screens/ActivoDetalleScreen';
+import AccionDetalleScreen from './src/screens/AccionDetalleScreen';
+import CriptoInfoScreen from './src/screens/CriptoInfoScreen';
+import NoticiasScreen from './src/screens/NoticiasScreen';
 import MiDineroScreen from './src/screens/MiDineroScreen';
 import BottomNav, { TabKey } from './src/components/BottomNav';
 import Entrada from './src/components/Entrada';
@@ -25,8 +27,8 @@ import { useAuth } from './src/hooks/AuthContext';
 import { borrarPerfil } from './src/lib/storage';
 import { registrarNotificaciones } from './src/lib/notificaciones';
 import { useTheme } from './src/theme/colors';
-import type { CriptoEstado } from './src/domain/cripto';
-import type { PackCotizacion } from './src/domain/mercados';
+import type { CriptoEstado, CriptoInfo } from './src/domain/cripto';
+import type { PackCotizacion, AccionCotizacion } from './src/domain/mercados';
 import type { Activo } from './src/domain/activo';
 
 export default function App() {
@@ -40,6 +42,9 @@ export default function App() {
   const [packDetalle, setPackDetalle] = useState<PackCotizacion | null>(null);
   const [versusAbierto, setVersusAbierto] = useState(false);
   const [activoDetalle, setActivoDetalle] = useState<Activo | null>(null);
+  const [accionDetalle, setAccionDetalle] = useState<AccionCotizacion | null>(null);
+  const [criptoInfo, setCriptoInfo] = useState<CriptoInfo | null>(null);
+  const [noticiasAbierto, setNoticiasAbierto] = useState(false);
   const { token, email, perfilInversor, cargando: cargandoAuth, logout } = useAuth();
   const { perfilGuardado, cargando: cargandoPerfil } = usePerfilGuardado();
   const { colors } = useTheme();
@@ -100,6 +105,8 @@ export default function App() {
             onAbrirPack={setPackDetalle}
             onAbrirDetalleCripto={setCriptoDetalle}
             onAbrirVersus={() => setVersusAbierto(true)}
+            onAbrirAccion={setAccionDetalle}
+            onAbrirCriptoInfo={setCriptoInfo}
           />
         );
       case 'midinero':
@@ -107,15 +114,12 @@ export default function App() {
       case 'chat':
         return <ChatScreen />;
       case 'simulador':
-        return <SimuladorScreen perfil={perfilUsuario} />;
-      case 'asesor':
         return <AsesorVirtualScreen perfil={perfilUsuario} />;
       default:
         return (
           <DashboardScreen
             perfil={perfilUsuario}
             onIrAlSimulador={() => setActiveTab('simulador')}
-            onIrAlAsesor={() => setActiveTab('asesor')}
             onAbrirDetalleCripto={setCriptoDetalle}
             onAbrirPack={setPackDetalle}
             onAbrirDetalleActivo={setActivoDetalle}
@@ -134,12 +138,42 @@ export default function App() {
     );
   }
 
+  // Noticias financieras
+  if (noticiasAbierto) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="auto" />
+        <NoticiasScreen onVolver={() => setNoticiasAbierto(false)} />
+      </SafeAreaProvider>
+    );
+  }
+
   // VERSUS: comparación cara a cara
   if (versusAbierto) {
     return (
       <SafeAreaProvider>
         <StatusBar style="auto" />
         <VersusScreen onVolver={() => setVersusAbierto(false)} />
+      </SafeAreaProvider>
+    );
+  }
+
+  // Detalle informativo de una cripto extra
+  if (criptoInfo) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="auto" />
+        <CriptoInfoScreen info={criptoInfo} onVolver={() => setCriptoInfo(null)} />
+      </SafeAreaProvider>
+    );
+  }
+
+  // Detalle de una acción (precio, gráfico y fundamentales)
+  if (accionDetalle) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="auto" />
+        <AccionDetalleScreen cotizacion={accionDetalle} onVolver={() => setAccionDetalle(null)} />
       </SafeAreaProvider>
     );
   }
@@ -162,10 +196,6 @@ export default function App() {
         <PackDetailScreen
           pack={packDetalle}
           onVolver={() => setPackDetalle(null)}
-          onSimular={() => {
-            setPackDetalle(null);
-            setActiveTab('simulador');
-          }}
         />
       </SafeAreaProvider>
     );
@@ -228,6 +258,7 @@ export default function App() {
           onNavegar={setActiveTab}
           onAbrirFaq={() => setFaqAbierto(true)}
           onAbrirVersus={() => setVersusAbierto(true)}
+          onAbrirNoticias={() => setNoticiasAbierto(true)}
           onRehacerTest={rehacerTest}
           onLogout={cerrarSesion}
         />

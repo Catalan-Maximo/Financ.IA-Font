@@ -35,6 +35,8 @@ interface PanelPerfilProps {
   onAbrirFaq: () => void;
   /** Abrir la pantalla VERSUS. */
   onAbrirVersus: () => void;
+  /** Abrir las noticias financieras. */
+  onAbrirNoticias: () => void;
   /** Rehacer el test del inversor. */
   onRehacerTest: () => void;
   /** Cerrar sesión (borra token y vuelve al login). */
@@ -79,7 +81,7 @@ function FilaMenu({
  * usuario organizada en grupos: navegación, preferencias, ayuda y cuenta.
  */
 export default function PanelPerfil({
-  visible, perfil, email, onClose, onNavegar, onAbrirFaq, onAbrirVersus, onRehacerTest, onLogout,
+  visible, perfil, email, onClose, onNavegar, onAbrirFaq, onAbrirVersus, onAbrirNoticias, onRehacerTest, onLogout,
 }: PanelPerfilProps) {
   const { colors, dark, setMode } = useTheme();
   const insets = useSafeAreaInsets();
@@ -154,8 +156,7 @@ export default function PanelPerfil({
             <FilaMenu icono="wallet-outline" titulo="Mi Dinero" color={colors.brand} onPress={() => navegar('midinero')} />
             <FilaMenu icono="git-compare-outline" titulo="Versus" color={colors.brand} onPress={() => { onClose(); onAbrirVersus(); }} />
             <FilaMenu icono="chatbubbles-outline" titulo="Chat de dudas" color={colors.brand} onPress={() => navegar('chat')} />
-            <FilaMenu icono="calculator-outline" titulo="Simulador" color={colors.brand} onPress={() => navegar('simulador')} />
-            <FilaMenu icono="sparkles-outline" titulo="Asesor Virtual" color={colors.brand} onPress={() => navegar('asesor')} ultima />
+            <FilaMenu icono="calculator-outline" titulo="Simulador" color={colors.brand} onPress={() => navegar('simulador')} ultima />
           </View>
 
           {/* ── Preferencias ─── */}
@@ -171,9 +172,10 @@ export default function PanelPerfil({
             </FilaMenu>
           </View>
 
-          {/* ── Ayuda ─── */}
-          <Text style={s.seccionTitulo}>AYUDA</Text>
+          {/* ── Mercados y noticias ─── */}
+          <Text style={s.seccionTitulo}>INFORMACIÓN</Text>
           <View style={s.grupo}>
+            <FilaMenu icono="newspaper-outline" titulo="Noticias financieras" color={colors.brand} onPress={() => { onClose(); onAbrirNoticias(); }} />
             <FilaMenu icono="help-circle-outline" titulo="Consultas frecuentes" color={colors.systemBlue} onPress={() => { onClose(); onAbrirFaq(); }} ultima />
           </View>
 

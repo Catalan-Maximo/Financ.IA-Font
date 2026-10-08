@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Badge from './Badge';
 import { useTheme } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
@@ -15,6 +16,8 @@ interface AssetListItemProps {
   variacion: number;
   /** Detalle opcional (ej. "Compra/Venta" del dólar). */
   detalle?: string;
+  /** Badge de veredicto opcional (ej. "BUY" verde, "Cara" rojo). */
+  badge?: { texto: string; tono: 'success' | 'warning' | 'danger' | 'brand' };
   onPress?: () => void;
 }
 
@@ -31,7 +34,7 @@ function colorAvatar(simbolo: string): string {
  * Fila de activo estilo Lemon: avatar circular con iniciales a la
  * izquierda, nombre+ticker al centro, precio y variación a la derecha.
  */
-export default function AssetListItem({ simbolo, nombre, precio, variacion, detalle, onPress }: AssetListItemProps) {
+export default function AssetListItem({ simbolo, nombre, precio, variacion, detalle, badge, onPress }: AssetListItemProps) {
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const avatarColor = useMemo(() => colorAvatar(simbolo), [simbolo]);
@@ -57,6 +60,7 @@ export default function AssetListItem({ simbolo, nombre, precio, variacion, deta
         <Text style={[s.variacion, variacion >= 0 ? s.verde : s.rojo]}>
           {variacion >= 0 ? '+' : ''}{variacion.toFixed(2)}%
         </Text>
+        {badge && <Badge label={badge.texto} tone={badge.tono} style={s.badge} />}
       </View>
     </Pressable>
   );
@@ -84,7 +88,8 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     centro: { flex: 1 },
     simbolo: { ...typography.headline, fontWeight: '600', color: colors.label },
     nombre: { ...typography.caption1, color: colors.secondaryLabel },
-    derecha: { alignItems: 'flex-end' },
+    derecha: { alignItems: 'flex-end', gap: spacing.xs },
+    badge: { alignSelf: 'flex-end' },
     precio: { ...typography.headline, fontWeight: '600', color: colors.label },
     variacion: { ...typography.footnote, fontWeight: '600' },
     verde: { color: colors.systemGreen },

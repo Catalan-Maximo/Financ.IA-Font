@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import Header from '../components/Header';
+import ExplicarDatosIA from '../components/ExplicarDatosIA';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Screen from '../components/Screen';
@@ -183,6 +184,14 @@ export default function CriptoDetalleScreen({ estado, onVolver }: CriptoDetalleP
             lo que estés dispuesto a perder.
           </Text>
         </Card>
+
+        <ExplicarDatosIA datos={
+          `${nombre}: precio $${estado.precio.toLocaleString('es-AR')}, ` +
+          `RSI(14) ${estado.rsi14 != null ? estado.rsi14.toFixed(1) : 'n/d'}, ` +
+          `soporte $${estado.soporte20.toLocaleString('es-AR')}, resistencia $${estado.resistencia20.toLocaleString('es-AR')}, ` +
+          `veredicto ${estado.veredicto} (${estado.checksPasados}/4 checks), ` +
+          `variación 3 días ${estado.cambio3d != null ? estado.cambio3d.toFixed(1) + '%' : 'n/d'}.`
+        } />
       </ScrollView>
     </Screen>
   );

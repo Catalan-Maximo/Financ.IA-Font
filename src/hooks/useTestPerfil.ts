@@ -11,7 +11,7 @@ export interface Aviso {
 }
 
 /**
- * Hook del test de perfil inversor (10 preguntas).
+ * Hook del test de perfil inversor (6 preguntas clave).
  *
  * Acumula el puntaje a medida que el usuario responde. Al llegar
  * a la última pregunta, envía la suma total al backend

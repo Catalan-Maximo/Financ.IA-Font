@@ -16,6 +16,14 @@ export interface VelaDiaria {
   cierre: number;
 }
 
+/** Cripto extra: solo informativa (precio y variación), sin análisis. */
+export interface CriptoInfo {
+  simbolo: string;
+  nombre: string;
+  precio: number;
+  variacion24h: number;
+}
+
 /** Una regla del checklist con su resultado. */
 export interface CheckCripto {
   label: string;

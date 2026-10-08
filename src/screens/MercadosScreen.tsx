@@ -12,8 +12,8 @@ import GraficoBarras, { type PuntoGrafico } from '../components/GraficoBarras';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import useMercados from '../hooks/useMercados';
 import useCripto from '../hooks/useCripto';
-import type { PackCotizacion } from '../domain/mercados';
-import type { CriptoEstado } from '../domain/cripto';
+import type { PackCotizacion, AccionCotizacion } from '../domain/mercados';
+import type { CriptoEstado, CriptoInfo } from '../domain/cripto';
 import { useTheme } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
@@ -33,20 +33,29 @@ const TONO_VEREDICTO: Record<string, 'success' | 'warning' | 'danger'> = {
   AVOID: 'danger',
 };
 
+const TONO_VALORACION: Record<string, 'success' | 'warning' | 'danger' | 'brand'> = {
+  Barata: 'success',
+  Razonable: 'warning',
+  Cara: 'danger',
+  'n/d': 'brand',
+};
+
 interface MercadosScreenProps {
   onAbrirPack: (pack: PackCotizacion) => void;
   onAbrirDetalleCripto: (estado: CriptoEstado) => void;
   onAbrirVersus: () => void;
+  onAbrirAccion: (accion: AccionCotizacion) => void;
+  onAbrirCriptoInfo: (info: CriptoInfo) => void;
 }
 
 /**
  * Sección Mercados con navegación superior (Acciones / Dólar / Crypto)
  * y carrusel horizontal de packs de inversión.
  */
-export default function MercadosScreen({ onAbrirPack, onAbrirDetalleCripto, onAbrirVersus }: MercadosScreenProps) {
+export default function MercadosScreen({ onAbrirPack, onAbrirDetalleCripto, onAbrirVersus, onAbrirAccion, onAbrirCriptoInfo }: MercadosScreenProps) {
   const [tab, setTab] = useState<TabMercado>('acciones');
   const { acciones, packs, dolar, loading, error, limpiarError } = useMercados();
-  const { cripto } = useCripto();
+  const { cripto, extras } = useCripto();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const s = useMemo(() => makeStyles(colors), [colors]);
@@ -130,6 +139,7 @@ export default function MercadosScreen({ onAbrirPack, onAbrirDetalleCripto, onAb
                 nombre={nombreTicker(a.ticker)}
                 precio={`$${a.precio.toLocaleString('es-AR')}`}
                 variacion={a.variacion24h}
+                onPress={() => onAbrirAccion(a)}
               />
             ))}
           </>
@@ -167,10 +177,30 @@ export default function MercadosScreen({ onAbrirPack, onAbrirDetalleCripto, onAb
                 nombre={c.simbolo.startsWith('BTC') ? 'Bitcoin' : 'Ethereum'}
                 precio={`$${c.precio.toLocaleString('es-AR')}`}
                 variacion={c.cambio3d ?? 0}
-                detalle={`RSI ${c.rsi14 != null ? c.rsi14.toFixed(1) : 'n/d'} · Veredicto ${c.veredicto}`}
+                detalle={`RSI ${c.rsi14 != null ? c.rsi14.toFixed(1) : 'n/d'}`}
+                badge={{
+                  texto: c.veredicto,
+                  tono: TONO_VEREDICTO[c.veredicto] ?? 'warning',
+                }}
                 onPress={() => onAbrirDetalleCripto(c)}
               />
             ))}
+
+            {extras.length > 0 && (
+              <>
+                <Header text="Otras criptomonedas (informativo)" level="section" style={s.seccion} />
+                {extras.map((info) => (
+                  <AssetListItem
+                    key={info.simbolo}
+                    simbolo={info.simbolo.replace('USDT', '')}
+                    nombre={info.nombre}
+                    precio={`$${info.precio.toLocaleString('es-AR')}`}
+                    variacion={info.variacion24h}
+                    onPress={() => onAbrirCriptoInfo(info)}
+                  />
+                ))}
+              </>
+            )}
           </>
         )}
       </ScrollView>

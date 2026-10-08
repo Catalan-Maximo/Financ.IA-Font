@@ -159,8 +159,8 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
           paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.xxl,
         }}
       >
-        <Header text="Asesor Virtual" level="title" style={s.titleSpacing} />
-        <Text style={s.subtitle}>Recibí una estrategia personalizada según tu perfil</Text>
+        <Header text="Simulador con Asesor" level="title" style={s.titleSpacing} />
+        <Text style={s.subtitle}>Compará todos los activos y recibí una estrategia personalizada</Text>
 
         {/* ── Formulario ─── */}
         <Card style={s.formCard}>
@@ -246,6 +246,29 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
             <Header text="Distribución Sugerida" level="section" style={s.resultHeader} />
             {respuesta.distribucionSugerida.map(renderAsignacion)}
 
+            {/* Rendimientos por activo (la lista completa del simulador) */}
+            <Header text="Rendimientos por Activo" level="section" style={s.resultHeader} />
+            <Card style={s.rendimientosCard}>
+              {respuesta.rendimientos.map((r, i) => (
+                <View key={`${r.entidad}-${i}`} style={[s.rendFila, i > 0 && s.rendBorde]}>
+                  <View style={s.rendIzq}>
+                    <Text style={s.rendEntidad} numberOfLines={1}>{r.entidad}</Text>
+                    <Text style={s.rendTipo}>{r.tipo} · Riesgo {r.riesgo}</Text>
+                  </View>
+                  <View style={s.rendDer}>
+                    <Text style={[s.rendReal, r.leGanaALaInflacion ? s.green : s.red]}>
+                      {r.tasaRealMensual > 0 ? '+' : ''}{r.tasaRealMensual}% real
+                    </Text>
+                    {r.peorEscenario != null && r.mejorEscenario != null && (
+                      <Text style={s.rendRango}>
+                        {r.peorEscenario.toFixed(0)}% a +{r.mejorEscenario.toFixed(0)}%
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </Card>
+
             {/* Resumen de estrategia */}
             <Card style={s.resumenCard}>
               <Header text="Resumen de Estrategia" level="section" style={s.resumenTitulo} />
@@ -294,6 +317,26 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     /* ── Distribución ─── */
     resultHeader: { marginBottom: spacing.lg },
     asignacionCard: { marginBottom: spacing.md },
+
+    rendimientosCard: { padding: 0, marginBottom: spacing.lg },
+    rendFila: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      gap: spacing.md,
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.lg,
+    },
+    rendBorde: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.separator,
+    },
+    rendIzq: { flex: 1 },
+    rendEntidad: { ...typography.subheadline, fontWeight: '600', color: colors.label },
+    rendTipo: { ...typography.caption2, color: colors.tertiaryLabel },
+    rendDer: { alignItems: 'flex-end' },
+    rendReal: { ...typography.subheadline, fontWeight: '700' },
+    rendRango: { ...typography.caption2, color: colors.tertiaryLabel },
     asignacionHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md },
     asignacionTipo: { ...typography.subheadline, fontWeight: '600', color: colors.label },
     asignacionPorcentaje: { ...typography.callout, fontWeight: '700', color: colors.brand },

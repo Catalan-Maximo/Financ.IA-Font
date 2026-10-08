@@ -8,6 +8,8 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import Screen from '../components/Screen';
 import GraficoBarras, { type PuntoGrafico } from '../components/GraficoBarras';
+import ExplicarDatosIA from '../components/ExplicarDatosIA';
+import { INFLACION_ESTIMADA_DASHBOARD } from '../constants';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
 import type { Activo } from '../domain/activo';
 import { useTheme } from '../theme/colors';
@@ -50,6 +52,16 @@ export default function ActivoDetalleScreen({ activo, onVolver }: ActivoDetalleP
           <Badge label={activo.tipo} tone="brand" />
           <Text style={s.tna}>{activo.tna}% TNA</Text>
         </View>
+        {(() => {
+          const real = activo.tna / 12 - INFLACION_ESTIMADA_DASHBOARD;
+          return (
+            <Badge
+              label={real > 0 ? 'Le gana a la inflación' : 'Pierde con la inflación'}
+              tone={real > 0 ? 'success' : 'danger'}
+              style={s.veredictoBadge}
+            />
+          );
+        })()}
 
         <Card style={s.card}>
           <Header text="Tendencia — últimos 30 días" level="section" style={s.seccion} />
@@ -67,6 +79,11 @@ export default function ActivoDetalleScreen({ activo, onVolver }: ActivoDetalleP
             acciones o cripto, aunque puede perder contra la inflación.
           </Text>
         </Card>
+
+        <ExplicarDatosIA datos={
+          `${activo.entidad} (${activo.tipo}): TNA ${activo.tna}% anual. ` +
+          `Rendimiento real mensual estimado ${(activo.tna / 12 - 4).toFixed(2)}% contra una inflación del 4%.`
+        } />
       </ScrollView>
     </Screen>
   );
@@ -86,6 +103,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     },
     titulo: { marginBottom: spacing.md },
     datos: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.lg },
+    veredictoBadge: { alignSelf: 'flex-start', marginBottom: spacing.md },
     tna: { ...typography.title2, fontWeight: '700', color: colors.label },
 
     card: { padding: spacing.lg, marginBottom: spacing.lg },
