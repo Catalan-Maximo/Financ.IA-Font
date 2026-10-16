@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Financ.IA-Font",
-    "slug": "Financ.IA-Font",
+    "slug": "financia-font",
     "version": "1.0.0",
     "sdkVersion": "57.0.0",
     "orientation": "portrait",
@@ -23,7 +23,8 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-status-bar"
+      "expo-status-bar",
+      "expo-font"
     ]
   }
 }
