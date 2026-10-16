@@ -24,21 +24,21 @@ interface PanelPerfilProps {
   /** Si el panel está abierto. */
   visible: boolean;
   /** Perfil de inversor actual. */
-  perfil: string;
+  profile: string;
   /** Email del usuario logueado. */
   email: string;
   /** Cerrar el panel (tap en el scrim). */
   onClose: () => void;
   /** Navegar a una pestaña de la app. */
-  onNavegar: (tab: TabKey) => void;
+  onNavigate: (tab: TabKey) => void;
   /** Abrir el panel de consultas frecuentes. */
-  onAbrirFaq: () => void;
+  onOpenFaq: () => void;
   /** Abrir la pantalla VERSUS. */
-  onAbrirVersus: () => void;
+  onOpenVersus: () => void;
   /** Abrir las noticias financieras. */
-  onAbrirNoticias: () => void;
+  onOpenNews: () => void;
   /** Rehacer el test del inversor. */
-  onRehacerTest: () => void;
+  onRedoTest: () => void;
   /** Cerrar sesión (borra token y vuelve al login). */
   onLogout: () => void;
 }
@@ -46,14 +46,14 @@ interface PanelPerfilProps {
 /** Fila de menú con ícono, título y acción. */
 function FilaMenu({
   icono,
-  titulo,
+  title,
   color,
   onPress,
   ultima = false,
   children,
 }: {
   icono: keyof typeof Ionicons.glyphMap;
-  titulo: string;
+  title: string;
   color: string;
   onPress: () => void;
   ultima?: boolean;
@@ -69,7 +69,7 @@ function FilaMenu({
     >
       <View style={s.filaIzq}>
         <Ionicons name={icono} size={22} color={color} />
-        <Text style={s.filaTexto}>{titulo}</Text>
+        <Text style={s.filaText}>{title}</Text>
       </View>
       {children}
     </Pressable>
@@ -80,8 +80,8 @@ function FilaMenu({
  * Panel deslizante desde la derecha (estilo iOS) con la cuenta del
  * usuario organizada en grupos: navegación, preferencias, ayuda y cuenta.
  */
-export default function PanelPerfil({
-  visible, perfil, email, onClose, onNavegar, onAbrirFaq, onAbrirVersus, onAbrirNoticias, onRehacerTest, onLogout,
+export default function PanelProfile({
+  visible, profile, email, onClose, onNavigate, onOpenFaq, onOpenVersus, onOpenNews, onRedoTest, onLogout,
 }: PanelPerfilProps) {
   const { colors, dark, setMode } = useTheme();
   const insets = useSafeAreaInsets();
@@ -105,16 +105,16 @@ export default function PanelPerfil({
     ]).start();
   }, [visible, ANCHO, scrim, slide]);
 
-  const cambiarTema = (oscuro: boolean) => {
+  const toggleTheme = (oscuro: boolean) => {
     if (Platform.OS !== 'web') {
       Haptics.selectionAsync();
     }
     setMode(oscuro ? 'dark' : 'light');
   };
 
-  const navegar = (tab: TabKey) => {
+  const navigate = (tab: TabKey) => {
     onClose();
-    onNavegar(tab);
+    onNavigate(tab);
   };
 
   const inicial = (email.trim().charAt(0) || 'F').toUpperCase();
@@ -140,32 +140,32 @@ export default function PanelPerfil({
           {/* ── Cabecera de cuenta ─── */}
           <View style={s.cabecera}>
             <View style={s.avatar}>
-              <Text style={s.avatarTexto}>{inicial}</Text>
+              <Text style={s.avatarText}>{inicial}</Text>
             </View>
-            <View style={s.cabeceraTexto}>
+            <View style={s.cabeceraText}>
               <Text style={s.email} numberOfLines={1}>{email || 'usuario@financia.com'}</Text>
-              <Badge label={`Perfil: ${perfil}`} tone="brand" style={s.badge} />
+              <Badge label={`Perfil: ${profile}`} tone="brand" style={s.badge} />
             </View>
           </View>
 
           {/* ── Navegación ─── */}
-          <Text style={s.seccionTitulo}>IR A</Text>
+          <Text style={s.seccionTitle}>IR A</Text>
           <View style={s.grupo}>
-            <FilaMenu icono="home-outline" titulo="Inicio" color={colors.brand} onPress={() => navegar('dashboard')} />
-            <FilaMenu icono="stats-chart-outline" titulo="Mercados" color={colors.brand} onPress={() => navegar('mercados')} />
-            <FilaMenu icono="wallet-outline" titulo="Mi Dinero" color={colors.brand} onPress={() => navegar('midinero')} />
-            <FilaMenu icono="git-compare-outline" titulo="Versus" color={colors.brand} onPress={() => { onClose(); onAbrirVersus(); }} />
-            <FilaMenu icono="chatbubbles-outline" titulo="Chat de dudas" color={colors.brand} onPress={() => navegar('chat')} />
-            <FilaMenu icono="calculator-outline" titulo="Simulador" color={colors.brand} onPress={() => navegar('simulador')} ultima />
+            <FilaMenu icono="home-outline" title="Inicio" color={colors.brand} onPress={() => navigate('dashboard')} />
+            <FilaMenu icono="stats-chart-outline" title="Mercados" color={colors.brand} onPress={() => navigate('mercados')} />
+            <FilaMenu icono="wallet-outline" title="Mi Dinero" color={colors.brand} onPress={() => navigate('midinero')} />
+            <FilaMenu icono="git-compare-outline" title="Versus" color={colors.brand} onPress={() => { onClose(); onOpenVersus(); }} />
+            <FilaMenu icono="chatbubbles-outline" title="Chat de dudas" color={colors.brand} onPress={() => navigate('chat')} />
+            <FilaMenu icono="calculator-outline" title="Simulador" color={colors.brand} onPress={() => navigate('simulador')} ultima />
           </View>
 
           {/* ── Preferencias ─── */}
-          <Text style={s.seccionTitulo}>PREFERENCIAS</Text>
+          <Text style={s.seccionTitle}>PREFERENCIAS</Text>
           <View style={s.grupo}>
-            <FilaMenu icono={dark ? 'moon' : 'sunny'} titulo="Modo oscuro" color={colors.brand} onPress={() => cambiarTema(!dark)} ultima>
+            <FilaMenu icono={dark ? 'moon' : 'sunny'} title="Modo oscuro" color={colors.brand} onPress={() => toggleTheme(!dark)} ultima>
               <Switch
                 value={dark}
-                onValueChange={cambiarTema}
+                onValueChange={toggleTheme}
                 trackColor={{ false: colors.fill, true: colors.brand }}
                 thumbColor="#FFFFFF"
               />
@@ -173,17 +173,17 @@ export default function PanelPerfil({
           </View>
 
           {/* ── Mercados y noticias ─── */}
-          <Text style={s.seccionTitulo}>INFORMACIÓN</Text>
+          <Text style={s.seccionTitle}>INFORMACIÓN</Text>
           <View style={s.grupo}>
-            <FilaMenu icono="newspaper-outline" titulo="Noticias financieras" color={colors.brand} onPress={() => { onClose(); onAbrirNoticias(); }} />
-            <FilaMenu icono="help-circle-outline" titulo="Consultas frecuentes" color={colors.systemBlue} onPress={() => { onClose(); onAbrirFaq(); }} ultima />
+            <FilaMenu icono="newspaper-outline" title="Noticias financieras" color={colors.brand} onPress={() => { onClose(); onOpenNews(); }} />
+            <FilaMenu icono="help-circle-outline" title="Consultas frecuentes" color={colors.systemBlue} onPress={() => { onClose(); onOpenFaq(); }} ultima />
           </View>
 
           {/* ── Cuenta ─── */}
-          <Text style={s.seccionTitulo}>CUENTA</Text>
+          <Text style={s.seccionTitle}>CUENTA</Text>
           <View style={s.grupo}>
-            <FilaMenu icono="refresh" titulo="Rehacer test del inversor" color={colors.systemRed} onPress={onRehacerTest} />
-            <FilaMenu icono="log-out-outline" titulo="Cerrar sesión" color={colors.systemRed} onPress={onLogout} ultima />
+            <FilaMenu icono="refresh" title="Rehacer test del inversor" color={colors.systemRed} onPress={onRedoTest} />
+            <FilaMenu icono="log-out-outline" title="Cerrar sesión" color={colors.systemRed} onPress={onLogout} ultima />
           </View>
         </ScrollView>
       </Animated.View>
@@ -225,13 +225,13 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    avatarTexto: { ...typography.title2, fontWeight: '700', color: colors.onBrand },
-    cabeceraTexto: { flex: 1, gap: spacing.xs },
+    avatarText: { ...typography.title2, fontWeight: '700', color: colors.onBrand },
+    cabeceraText: { flex: 1, gap: spacing.xs },
     email: { ...typography.headline, fontWeight: '600', color: colors.label },
     badge: { alignSelf: 'flex-start' },
 
     /* ── Grupos ─── */
-    seccionTitulo: {
+    seccionTitle: {
       ...typography.caption2,
       fontWeight: '600',
       color: colors.tertiaryLabel,
@@ -264,7 +264,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       alignItems: 'center',
       gap: spacing.md,
     },
-    filaTexto: {
+    filaText: {
       ...typography.body,
       color: colors.label,
     },

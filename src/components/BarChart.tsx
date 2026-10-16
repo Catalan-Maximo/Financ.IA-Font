@@ -4,14 +4,14 @@ import { useTheme } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 
-export interface PuntoGrafico {
-  fecha: string;
-  valor: number;
+export interface ChartPoint {
+  date: string;
+  value: number;
 }
 
 interface GraficoBarrasProps {
   /** Puntos ordenados cronológicamente. */
-  puntos: PuntoGrafico[];
+  points: ChartPoint[];
   /** Alto del gráfico en px. */
   alto?: number;
   /** Formato de los valores en las etiquetas (ej. "$" para precios). */
@@ -22,13 +22,13 @@ interface GraficoBarrasProps {
  * Gráfico de barras sin dependencias: normaliza los valores al alto
  * disponible, verde si la serie subió, rojo si bajó.
  */
-export default function GraficoBarras({ puntos, alto = 110, prefijo = '' }: GraficoBarrasProps) {
+export default function BarChart({ points, alto = 110, prefijo = '' }: GraficoBarrasProps) {
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
-  if (puntos.length < 2) return null;
+  if (points.length < 2) return null;
 
-  const valores = puntos.map((p) => p.valor);
+  const valores = points.map((p) => p.value);
   const min = Math.min(...valores);
   const max = Math.max(...valores);
   const rango = Math.max(max - min, 0.0001);
@@ -39,13 +39,13 @@ export default function GraficoBarras({ puntos, alto = 110, prefijo = '' }: Graf
   return (
     <View>
       <View style={[s.grafico, { height: alto }]}>
-        {puntos.map((p) => (
+        {points.map((p) => (
           <View
-            key={p.fecha}
+            key={p.date}
             style={[
               s.barra,
               {
-                height: Math.max(((p.valor - min) / rango) * alto, 4),
+                height: Math.max(((p.value - min) / rango) * alto, 4),
                 backgroundColor: alza ? colors.systemGreen : colors.systemRed,
               },
             ]}
@@ -57,8 +57,8 @@ export default function GraficoBarras({ puntos, alto = 110, prefijo = '' }: Graf
         <Text style={s.etiqueta}>{formato(max)}</Text>
       </View>
       <View style={s.fechas}>
-        <Text style={s.etiqueta}>{puntos[0].fecha}</Text>
-        <Text style={s.etiqueta}>{puntos[puntos.length - 1].fecha}</Text>
+        <Text style={s.etiqueta}>{points[0].date}</Text>
+        <Text style={s.etiqueta}>{points[points.length - 1].date}</Text>
       </View>
     </View>
   );

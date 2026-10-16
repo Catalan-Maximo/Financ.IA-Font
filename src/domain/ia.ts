@@ -1,4 +1,4 @@
-import type { RendimientoDTO } from './inversion';
+import type { Performance } from './investment';
 
 /**
  * Tipos para el asesor virtual de IA.
@@ -6,15 +6,15 @@ import type { RendimientoDTO } from './inversion';
  */
 
 /** Request body para POST /ia/simular */
-export interface IARequest {
+export interface AIRequest {
   /** Perfil de riesgo: "Conservador", "Moderado" o "Agresivo". */
-  perfilInversor: string;
+  investorProfile: string;
   /** Monto disponible para invertir en pesos. */
-  monto: number;
+  amount: number;
   /** Plazo de inversión deseado en meses. */
-  plazoMeses: number;
+  months: number;
   /** Inflación mensual estimada (%, ej. 4.0 = 4%). */
-  inflacionMensual: number;
+  monthlyInflation: number;
   /** Activo A a comparar (opcional). */
   activoA?: string;
   /** Activo B a comparar (opcional). */
@@ -22,29 +22,29 @@ export interface IARequest {
 }
 
 /** Una asignación porcentual del portafolio sugerido. */
-export interface Asignacion {
+export interface Allocation {
   /** Tipo de activo (ej. "Billetera Virtual", "Plazo Fijo", "Dólar / Cobertura"). */
-  tipoActivo: string;
+  assetType: string;
   /** Porcentaje sugerido del portafolio (0-100). */
-  porcentaje: number;
+  percentage: number;
   /** Justificación breve de la asignación. */
-  motivo: string;
+  reason: string;
 }
 
 /** Response de POST /ia/simular */
-export interface IAResponse {
+export interface AIResponse {
   /** Perfil de riesgo utilizado para la recomendación. */
-  perfilInversor: string;
+  investorProfile: string;
   /** Texto de recomendación generado por la IA. */
-  recomendacion: string;
+  recommendation: string;
   /** Nivel de riesgo general: "Bajo", "Medio", "Alto". */
-  nivelRiesgo: string;
+  riskLevel: string;
   /** Distribución sugerida del portafolio. */
-  distribucionSugerida: Asignacion[];
+  suggestedAllocation: Allocation[];
   /** Rendimientos proyectados para cada activo del mercado. */
-  rendimientos: RendimientoDTO[];
+  performances: Performance[];
   /** Ganancia real total estimada en $ al final del plazo. */
-  gananciaRealEstimada: number;
+  estimatedRealGain: number;
   /** Resumen breve de la estrategia. */
-  resumenEstrategia: string;
+  strategySummary: string;
 }

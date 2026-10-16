@@ -1,38 +1,38 @@
 import { useState } from 'react';
 import api from '../lib/api';
-import type { MensajeChat } from '../domain/chat';
+import type { ChatMessage } from '../domain/chat';
 
 /**
  * Hook del chatbot: mantiene la conversación y envía cada turno
  * con la historia completa al backend (Groq la continúa).
  */
 export default function useChat() {
-  const [mensajes, setMensajes] = useState<MensajeChat[]>([]);
-  const [enviando, setEnviando] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [sending, setSending] = useState(false);
 
-  const enviar = async (texto: string) => {
-    const limpio = texto.trim();
-    if (!limpio || enviando) return;
+  const send = async (text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || sending) return;
 
-    const historia = [...mensajes, { rol: 'user' as const, contenido: limpio }];
-    setMensajes(historia);
-    setEnviando(true);
+    const history = [...messages, { role: 'user' as const, content: trimmed }];
+    setMessages(history);
+    setSending(true);
 
     try {
-      const response = await api.post('/ia/chat', { mensajes: historia }, { timeout: 30000 });
-      setMensajes([...historia, { rol: 'assistant', contenido: response.data.respuesta }]);
+      const response = await api.post('/ia/chat', { messages: history }, { timeout: 30000 });
+      setMessages([...history, { role: 'assistant', content: response.data.answer }]);
     } catch (e) {
       console.error(e);
-      setMensajes([
-        ...historia,
-        { rol: 'assistant', contenido: 'No pude responder ahora. Intentá de nuevo en unos segundos.' },
+      setMessages([
+        ...history,
+        { role: 'assistant', content: 'No pude responder ahora. Intentá de nuevo en unos segundos.' },
       ]);
     } finally {
-      setEnviando(false);
+      setSending(false);
     }
   };
 
-  const limpiar = () => setMensajes([]);
+  const clear = () => setMessages([]);
 
-  return { mensajes, enviando, enviar, limpiar };
+  return { messages, sending, send, clear };
 }

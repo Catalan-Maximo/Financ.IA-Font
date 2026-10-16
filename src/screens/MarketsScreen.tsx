@@ -8,21 +8,21 @@ import Screen from '../components/Screen';
 import AssetListItem from '../components/AssetListItem';
 import PackCard from '../components/PackCard';
 import SegmentedTabs from '../components/SegmentedTabs';
-import Cargando from '../components/Cargando';
-import GraficoBarras, { type PuntoGrafico } from '../components/GraficoBarras';
+import Loading from '../components/Loading';
+import BarChart, { type ChartPoint } from '../components/BarChart';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
-import useMercados from '../hooks/useMercados';
-import useCripto from '../hooks/useCripto';
-import type { PackCotizacion, AccionCotizacion } from '../domain/mercados';
-import type { CriptoEstado, CriptoInfo } from '../domain/cripto';
+import useMarkets from '../hooks/useMarkets';
+import useCrypto from '../hooks/useCrypto';
+import type { PackQuote, StockQuote } from '../domain/markets';
+import type { CryptoState, CryptoInfo } from '../domain/crypto';
 import { useTheme } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { radius } from '../theme/radius';
 
-type TabMercado = 'acciones' | 'dolar' | 'crypto';
+type TabMarket = 'acciones' | 'dolar' | 'crypto';
 
-const TABS: { key: TabMercado; label: string }[] = [
+const TABS: { key: TabMarket; label: string }[] = [
   { key: 'acciones', label: 'Acciones' },
   { key: 'dolar', label: 'Dólar' },
   { key: 'crypto', label: 'Crypto' },
@@ -35,67 +35,71 @@ const TONO_VEREDICTO: Record<string, 'success' | 'warning' | 'danger'> = {
 };
 
 interface MercadosScreenProps {
-  onAbrirPack: (pack: PackCotizacion) => void;
-  onAbrirDetalleCripto: (estado: CriptoEstado) => void;
-  onAbrirVersus: () => void;
-  onAbrirAccion: (accion: AccionCotizacion) => void;
-  onAbrirCriptoInfo: (info: CriptoInfo) => void;
+  onOpenPack: (pack: PackQuote) => void;
+  onOpenCryptoDetail: (state: CryptoState) => void;
+  onOpenVersus: () => void;
+  onOpenStock: (accion: StockQuote) => void;
+  onOpenCryptoInfo: (info: CryptoInfo) => void;
 }
 
 /**
  * Sección Mercados con navegación superior (Acciones / Dólar / Crypto)
  * y carrusel horizontal de packs de inversión.
  */
-export default function MercadosScreen({ onAbrirPack, onAbrirDetalleCripto, onAbrirVersus, onAbrirAccion, onAbrirCriptoInfo }: MercadosScreenProps) {
-  const [tab, setTab] = useState<TabMercado>('acciones');
-  const { acciones, packs, dolar, loading, error, limpiarError } = useMercados();
-  const { cripto, extras } = useCripto();
+/**
+ * Pantalla Mercados: acciones argentinas y SPY (Yahoo Finance),
+ * packs de inversión y cotizaciones del dólar.
+ */
+export default function MarketsScreen({ onOpenPack, onOpenCryptoDetail, onOpenVersus, onOpenStock, onOpenCryptoInfo }: MercadosScreenProps) {
+  const [tab, setTab] = useState<TabMarket>('acciones');
+  const { acciones, packs, dollar, loading, error, clearError } = useMarkets();
+  const { crypto, extras } = useCrypto();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
   // Historial del dólar oficial para el gráfico de la pestaña Dólar
-  const [historialDolar, setHistorialDolar] = useState<PuntoGrafico[]>([]);
+  const [historialDollar, setHistorialDollar] = useState<ChartPoint[]>([]);
   useEffect(() => {
-    api.get<PuntoGrafico[]>('/mercados/dolar-historial?dias=30')
-      .then((r) => setHistorialDolar(r.data))
+    api.get<ChartPoint[]>('/markets/dollar-historial?days=30')
+      .then((r) => setHistorialDollar(r.data))
       .catch(() => {});
   }, []);
 
   useEffect(() => {
     if (error) {
       Alert.alert('Error de carga', 'No se pudieron sincronizar los mercados.', [
-        { text: 'OK', onPress: limpiarError },
+        { text: 'OK', onPress: clearError },
       ]);
     }
-  }, [error, limpiarError]);
+  }, [error, clearError]);
 
   if (loading) {
     return (
       <Screen>
-        <Cargando style={s.loading} />
+        <Loading style={s.loading} />
       </Screen>
     );
   }
 
   return (
     <Screen safeTop={false}>
-      <Header text="Mercados" level="title" style={s.titulo} />
+      <Header text="Mercados" level="title" style={s.title} />
 
       {/* Acceso al VERSUS */}
       <Pressable
         style={({ pressed }) => [s.versusBtn, pressed && s.versusPressed]}
-        onPress={onAbrirVersus}
+        onPress={onOpenVersus}
       >
         <Ionicons name="git-compare-outline" size={18} color={colors.onBrand} />
-        <Text style={s.versusTexto}>Versus: compará dos inversiones</Text>
+        <Text style={s.versusText}>Versus: compará dos inversiones</Text>
       </Pressable>
 
       {/* Top Tabs */}
       <SegmentedTabs
-        opciones={TABS}
+        options={TABS}
         activa={tab}
-        onCambiar={(t) => setTab(t as TabMercado)}
+        onCambiar={(t) => setTab(t as TabMarket)}
         style={s.tabsMargin}
       />
 
@@ -112,7 +116,7 @@ export default function MercadosScreen({ onAbrirPack, onAbrirDetalleCripto, onAb
             <Header text="Packs de Inversión" level="section" style={s.seccion} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {packs.map((pack) => (
-                <PackCard key={pack.id} pack={pack} onPress={() => onAbrirPack(pack)} />
+                <PackCard key={pack.id} pack={pack} onPress={() => onOpenPack(pack)} />
               ))}
             </ScrollView>
 
@@ -121,11 +125,11 @@ export default function MercadosScreen({ onAbrirPack, onAbrirDetalleCripto, onAb
             {acciones.map((a) => (
               <AssetListItem
                 key={a.ticker}
-                simbolo={a.ticker}
-                nombre={nombreTicker(a.ticker)}
-                precio={`$${a.precio.toLocaleString('es-AR')}`}
-                variacion={a.variacion24h}
-                onPress={() => onAbrirAccion(a)}
+                symbol={a.ticker}
+                name={nombreTicker(a.ticker)}
+                price={`$${a.price.toLocaleString('es-AR')}`}
+                variation={a.variation24h}
+                onPress={() => onOpenStock(a)}
               />
             ))}
           </>
@@ -134,20 +138,20 @@ export default function MercadosScreen({ onAbrirPack, onAbrirDetalleCripto, onAb
         {tab === 'dolar' && (
           <>
             <Header text="Dólar Oficial — últimos 30 días" level="section" style={s.seccion} />
-            {historialDolar.length > 1 && (
-              <View style={s.graficoDolar}>
-                <GraficoBarras puntos={historialDolar} prefijo="$" />
+            {historialDollar.length > 1 && (
+              <View style={s.graficoDollar}>
+                <BarChart points={historialDollar} prefijo="$" />
               </View>
             )}
             <Header text="Cotizaciones del Dólar" level="section" style={s.seccion} />
-            {dolar.map((d) => (
+            {dollar.map((d) => (
               <AssetListItem
-                key={d.nombre}
-                simbolo={abreviaturaDolar(d.nombre)}
-                nombre={d.nombre}
-                precio={`$${d.venta.toLocaleString('es-AR')}`}
-                variacion={0}
-                detalle={`Compra $${d.compra.toLocaleString('es-AR')} · Venta $${d.venta.toLocaleString('es-AR')} · ${d.fecha}`}
+                key={d.name}
+                symbol={abreviaturaDollar(d.name)}
+                name={d.name}
+                price={`$${d.sellPrice.toLocaleString('es-AR')}`}
+                variation={0}
+                detail={`Compra $${d.buyPrice.toLocaleString('es-AR')} · Venta $${d.sellPrice.toLocaleString('es-AR')} · ${d.date}`}
               />
             ))}
           </>
@@ -156,19 +160,19 @@ export default function MercadosScreen({ onAbrirPack, onAbrirDetalleCripto, onAb
         {tab === 'crypto' && (
           <>
             <Header text="Cripto" level="section" style={s.seccion} />
-            {cripto.map((c) => (
+            {crypto.map((c) => (
               <AssetListItem
-                key={c.simbolo}
-                simbolo={c.simbolo.replace('USDT', '')}
-                nombre={c.simbolo.startsWith('BTC') ? 'Bitcoin' : 'Ethereum'}
-                precio={`$${c.precio.toLocaleString('es-AR')}`}
-                variacion={c.cambio3d ?? 0}
-                detalle={`RSI ${c.rsi14 != null ? c.rsi14.toFixed(1) : 'n/d'}`}
+                key={c.symbol}
+                symbol={c.symbol.replace('USDT', '')}
+                name={c.symbol.startsWith('BTC') ? 'Bitcoin' : 'Ethereum'}
+                price={`$${c.price.toLocaleString('es-AR')}`}
+                variation={c.change3d ?? 0}
+                detail={`RSI ${c.rsi14 != null ? c.rsi14.toFixed(1) : 'n/d'}`}
                 badge={{
-                  texto: c.veredicto,
-                  tono: TONO_VEREDICTO[c.veredicto] ?? 'warning',
+                  text: c.verdict,
+                  tono: TONO_VEREDICTO[c.verdict] ?? 'warning',
                 }}
-                onPress={() => onAbrirDetalleCripto(c)}
+                onPress={() => onOpenCryptoDetail(c)}
               />
             ))}
 
@@ -177,12 +181,12 @@ export default function MercadosScreen({ onAbrirPack, onAbrirDetalleCripto, onAb
                 <Header text="Otras criptomonedas (informativo)" level="section" style={s.seccion} />
                 {extras.map((info) => (
                   <AssetListItem
-                    key={info.simbolo}
-                    simbolo={info.simbolo.replace('USDT', '')}
-                    nombre={info.nombre}
-                    precio={`$${info.precio.toLocaleString('es-AR')}`}
-                    variacion={info.variacion24h}
-                    onPress={() => onAbrirCriptoInfo(info)}
+                    key={info.symbol}
+                    symbol={info.symbol.replace('USDT', '')}
+                    name={info.name}
+                    price={`$${info.price.toLocaleString('es-AR')}`}
+                    variation={info.variation24h}
+                    onPress={() => onOpenCryptoInfo(info)}
                   />
                 ))}
               </>
@@ -207,7 +211,7 @@ function nombreTicker(ticker: string): string {
 }
 
 /** Abreviatura para el avatar de cada dólar. */
-function abreviaturaDolar(nombre: string): string {
+function abreviaturaDollar(name: string): string {
   const abrev: Record<string, string> = {
     'Oficial': 'OF',
     'Blue': 'BL',
@@ -217,13 +221,13 @@ function abreviaturaDolar(nombre: string): string {
     'Tarjeta': 'TA',
     'Mayorista': 'MA',
   };
-  return abrev[nombre] ?? nombre.substring(0, 2).toUpperCase();
+  return abrev[name] ?? name.substring(0, 2).toUpperCase();
 }
 
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
     loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    titulo: { marginTop: spacing.lg, marginBottom: spacing.lg },
+    title: { marginTop: spacing.lg, marginBottom: spacing.lg },
 
     versusBtn: {
       flexDirection: 'row',
@@ -236,9 +240,9 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       marginBottom: spacing.md,
     },
     versusPressed: { opacity: 0.85 },
-    versusTexto: { ...typography.subheadline, fontWeight: '700', color: colors.onBrand },
+    versusText: { ...typography.subheadline, fontWeight: '700', color: colors.onBrand },
 
-    graficoDolar: {
+    graficoDollar: {
       backgroundColor: colors.secondarySystemBackground,
       borderRadius: radius.lg,
       padding: spacing.md,

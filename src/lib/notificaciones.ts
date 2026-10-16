@@ -10,7 +10,7 @@ import api from './api';
  * (limitación de Expo Go desde SDK 53); funcionan en iOS Expo Go
  * y en development builds.
  */
-export async function registrarNotificaciones(): Promise<void> {
+export async function registerNotifications(): Promise<void> {
   try {
     const permisos = await Notifications.requestPermissionsAsync();
     if (!permisos.granted) {
@@ -18,7 +18,7 @@ export async function registrarNotificaciones(): Promise<void> {
       return;
     }
     const token = (await Notifications.getExpoPushTokenAsync()).data;
-    await api.post('/usuarios/push-token', { token });
+    await api.post('/users/push-token', { token });
     console.info('Push token registrado en el backend');
   } catch (error) {
     console.warn('No se pudieron registrar las notificaciones', error);

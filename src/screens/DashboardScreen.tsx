@@ -8,32 +8,37 @@ import Card from '../components/Card';
 import Screen from '../components/Screen';
 import CryptoCard from '../components/CryptoCard';
 import PackCard from '../components/PackCard';
-import Cargando from '../components/Cargando';
+import Loading from '../components/Loading';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
-import useMercado from '../hooks/useMercado';
-import useCripto from '../hooks/useCripto';
+import useMarket from '../hooks/useMarket';
+import useCrypto from '../hooks/useCrypto';
 import usePacks from '../hooks/usePacks';
-import type { Activo } from '../domain/activo';
-import type { CriptoEstado } from '../domain/cripto';
-import type { PackCotizacion } from '../domain/mercados';
+import type { Asset } from '../domain/asset';
+import type { CryptoState } from '../domain/crypto';
+import type { PackQuote } from '../domain/markets';
 import { useTheme } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { radius } from '../theme/radius';
 import { grid } from '../theme/grid';
-import { INFLACION_ESTIMADA_DASHBOARD } from '../constants';
+import { ESTIMATED_MONTHLY_INFLATION } from '../constants';
 
 interface DashboardProps {
-  perfil: string;
-  onIrAlSimulador: () => void;
-  onAbrirDetalleCripto: (estado: CriptoEstado) => void;
-  onAbrirPack: (pack: PackCotizacion) => void;
-  onAbrirDetalleActivo: (activo: Activo) => void;
+  profile: string;
+  onGoToSimulator: () => void;
+  onOpenCryptoDetail: (state: CryptoState) => void;
+  onOpenPack: (pack: PackQuote) => void;
+  onOpenAssetDetail: (asset: Asset) => void;
 }
 
-export default function DashboardScreen({ perfil, onIrAlSimulador, onAbrirDetalleCripto, onAbrirPack, onAbrirDetalleActivo }: DashboardProps) {
-  const { activos, loading, error, limpiarError } = useMercado();
-  const { cripto, alertas } = useCripto();
+/**
+ * Pantalla Inicio: tasas de plazos fijos y billeteras (BCRA),
+ * inflación, ranking de activos que le ganan a la inflación,
+ * señales cripto y packs destacados.
+ */
+export default function DashboardScreen({ profile, onGoToSimulator, onOpenCryptoDetail, onOpenPack, onOpenAssetDetail }: DashboardProps) {
+  const { assets, loading, error, clearError } = useMarket();
+  const { crypto, alerts } = useCrypto();
   const { packs } = usePacks();
   const [verTodas, setVerTodas] = useState(false);
   const { colors } = useTheme();
@@ -45,42 +50,42 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onAbrirDetall
       Alert.alert(
         'Error de carga',
         'No se pudieron sincronizar las tasas del mercado.',
-        [{ text: 'OK', onPress: limpiarError }],
+        [{ text: 'OK', onPress: clearError }],
       );
     }
-  }, [error, limpiarError]);
+  }, [error, clearError]);
 
   // Señales cripto: avisamos una sola vez por sesión (no en cada remount)
   const senalesAvisadas = useRef(false);
   useEffect(() => {
-    if (alertas.length > 0 && !senalesAvisadas.current) {
+    if (alerts.length > 0 && !senalesAvisadas.current) {
       senalesAvisadas.current = true;
-      Alert.alert('Señales cripto', alertas.map((a) => a.mensaje).join('\n\n'));
+      Alert.alert('Señales cripto', alerts.map((a) => a.message).join('\n\n'));
     }
-  }, [alertas]);
+  }, [alerts]);
 
   // Ordenamos por rendimiento real (de mayor a menor)
   const ordenados = useMemo(
     () =>
-      [...activos].sort((a, b) => {
-        const real = (item: Activo) => item.tna / 12 - INFLACION_ESTIMADA_DASHBOARD;
+      [...assets].sort((a, b) => {
+        const real = (item: Asset) => item.tna / 12 - ESTIMATED_MONTHLY_INFLATION;
         return real(b) - real(a);
       }),
-    [activos],
+    [assets],
   );
 
-  const tasaReal = (item: Activo) => item.tna / 12 - INFLACION_ESTIMADA_DASHBOARD;
+  const tasaReal = (item: Asset) => item.tna / 12 - ESTIMATED_MONTHLY_INFLATION;
   const mejor = ordenados[0];
   const top5 = ordenados.slice(0, 5);
   const resto = ordenados.slice(5);
 
-  const renderFila = (item: Activo, index: number) => {
+  const renderFila = (item: Asset, index: number) => {
     const real = tasaReal(item);
     return (
       <Pressable
-        key={`${item.entidad}-${index}`}
+        key={`${item.entity}-${index}`}
         style={({ pressed }) => [s.fila, index > 0 && s.filaBorde, pressed && s.filaPressed]}
-        onPress={() => onAbrirDetalleActivo(item)}
+        onPress={() => onOpenAssetDetail(item)}
       >
         <View style={s.filaIzq}>
           {index === 0 ? (
@@ -89,16 +94,16 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onAbrirDetall
             <Text style={s.rank}>{index + 1}.</Text>
           )}
           <View style={s.filaInfo}>
-            <Text style={s.entidad} numberOfLines={1} maxFontSizeMultiplier={1.3}>{item.entidad}</Text>
-            <Text style={s.tipo} numberOfLines={1} maxFontSizeMultiplier={1.3}>{item.tipo}</Text>
+            <Text style={s.entity} numberOfLines={1} maxFontSizeMultiplier={1.3}>{item.entity}</Text>
+            <Text style={s.type} numberOfLines={1} maxFontSizeMultiplier={1.3}>{item.type}</Text>
           </View>
         </View>
         <View style={s.filaDer}>
-          <Text style={[s.real, real > 0 ? s.verde : s.rojo]} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+          <Text style={[s.real, real > 0 ? s.green : s.red]} numberOfLines={1} maxFontSizeMultiplier={1.3}>
             {real > 0 ? '+' : ''}{real.toFixed(2)}% real
           </Text>
           <Text style={s.tna} numberOfLines={1} maxFontSizeMultiplier={1.3}>TNA {item.tna}%</Text>
-          <Text style={[s.veredictoFila, real > 0 ? s.verde : s.rojo]} numberOfLines={1} maxFontSizeMultiplier={1.3}>
+          <Text style={[s.veredictoFila, real > 0 ? s.green : s.red]} numberOfLines={1} maxFontSizeMultiplier={1.3}>
             {real > 0 ? 'Le gana a la inflación' : 'Pierde con la inflación'}
           </Text>
         </View>
@@ -109,7 +114,7 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onAbrirDetall
   if (loading) {
     return (
       <Screen>
-        <Cargando style={s.loading} />
+        <Loading style={s.loading} />
       </Screen>
     );
   }
@@ -128,39 +133,39 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onAbrirDetall
           <View style={s.heroTop}>
             <Text style={s.heroSaludo}>Hola</Text>
             <View style={s.heroChip}>
-              <Text style={s.heroChipTexto}>{perfil}</Text>
+              <Text style={s.heroChipText}>{profile}</Text>
             </View>
           </View>
           {mejor && (
             <>
-              <Text style={s.heroTitulo}>Hoy te conviene</Text>
-              <Text style={s.heroEntidad}>{mejor.entidad}</Text>
-              <Text style={s.heroDetalle}>
-                {mejor.tipo} · TNA {mejor.tna}% ·{' '}
+              <Text style={s.heroTitle}>Hoy te conviene</Text>
+              <Text style={s.heroEntity}>{mejor.entity}</Text>
+              <Text style={s.heroDetail}>
+                {mejor.type} · TNA {mejor.tna}% ·{' '}
                 {tasaReal(mejor) > 0 ? '+' : ''}{tasaReal(mejor).toFixed(2)}% real mensual
               </Text>
             </>
           )}
-          {!mejor && <Text style={s.heroDetalle}>Todavía no hay datos de mercado cargados.</Text>}
+          {!mejor && <Text style={s.heroDetail}>Todavía no hay datos de mercado cargados.</Text>}
           <Pressable
-            style={({ pressed }) => [s.heroBoton, pressed && s.heroBotonPressed]}
-            onPress={onIrAlSimulador}
+            style={({ pressed }) => [s.heroButton, pressed && s.heroBotonPressed]}
+            onPress={onGoToSimulator}
           >
-            <Text style={s.heroBotonTexto}>Simular inversión</Text>
+            <Text style={s.heroBotonText}>Simular inversión</Text>
             <Ionicons name="arrow-forward" size={16} color={colors.brand} />
           </Pressable>
         </View>
 
         {/* ── Cripto: lado a lado ─── */}
-        {cripto.length > 0 && (
+        {crypto.length > 0 && (
           <>
             <Header text="Cripto" level="section" style={s.seccion} />
-            <View style={s.filaCripto}>
-              {cripto.map((estado) => (
-                <View key={estado.simbolo} style={s.celdaCripto}>
+            <View style={s.filaCrypto}>
+              {crypto.map((state) => (
+                <View key={state.symbol} style={s.cryptoCell}>
                   <CryptoCard
-                    estado={estado}
-                    onPress={() => onAbrirDetalleCripto(estado)}
+                    state={state}
+                    onPress={() => onOpenCryptoDetail(state)}
                   />
                 </View>
               ))}
@@ -178,7 +183,7 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onAbrirDetall
               contentContainerStyle={{ paddingRight: spacing.lg }}
             >
               {packs.map((pack) => (
-                <PackCard key={pack.id} pack={pack} onPress={() => onAbrirPack(pack)} />
+                <PackCard key={pack.id} pack={pack} onPress={() => onOpenPack(pack)} />
               ))}
             </ScrollView>
           </>
@@ -193,8 +198,8 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onAbrirDetall
 
         {resto.length > 0 && (
           <Pressable style={s.verTodas} onPress={() => setVerTodas((v) => !v)}>
-            <Text style={s.verTodasTexto}>
-              {verTodas ? 'Mostrar menos' : `Ver todas las opciones (${activos.length})`}
+            <Text style={s.verTodasText}>
+              {verTodas ? 'Mostrar menos' : `Ver todas las opciones (${assets.length})`}
             </Text>
             <Ionicons
               name={verTodas ? 'chevron-up' : 'chevron-down'}
@@ -209,7 +214,7 @@ export default function DashboardScreen({ perfil, onIrAlSimulador, onAbrirDetall
           <Button
             title="Simular Inversión"
             icon="calculator-outline"
-            onPress={onIrAlSimulador}
+            onPress={onGoToSimulator}
             style={s.footerBtn}
           />
         </View>
@@ -242,11 +247,11 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       paddingHorizontal: spacing.md,
       borderRadius: 20,
     },
-    heroChipTexto: { ...typography.caption1, fontWeight: '600', color: colors.onBrand },
-    heroTitulo: { ...typography.caption1, color: 'rgba(255,255,255,0.85)', marginBottom: spacing.xs },
-    heroEntidad: { ...typography.title1, fontWeight: '800', color: colors.onBrand, marginBottom: spacing.xs },
-    heroDetalle: { ...typography.footnote, color: 'rgba(255,255,255,0.9)', marginBottom: spacing.lg },
-    heroBoton: {
+    heroChipText: { ...typography.caption1, fontWeight: '600', color: colors.onBrand },
+    heroTitle: { ...typography.caption1, color: 'rgba(255,255,255,0.85)', marginBottom: spacing.xs },
+    heroEntity: { ...typography.title1, fontWeight: '800', color: colors.onBrand, marginBottom: spacing.xs },
+    heroDetail: { ...typography.footnote, color: 'rgba(255,255,255,0.9)', marginBottom: spacing.lg },
+    heroButton: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
@@ -256,13 +261,13 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       paddingVertical: spacing.md,
     },
     heroBotonPressed: { opacity: 0.85 },
-    heroBotonTexto: { ...typography.subheadline, fontWeight: '700', color: colors.brand },
+    heroBotonText: { ...typography.subheadline, fontWeight: '700', color: colors.brand },
 
     /* ── Secciones ─── */
     seccion: { marginBottom: spacing.md },
     // grid.fila con stretch: las dos cripto tarjetas miden lo mismo
-    filaCripto: { ...grid.fila },
-    celdaCripto: { ...grid.col },
+    filaCrypto: { ...grid.fila },
+    cryptoCell: { ...grid.col },
 
     /* ── Lista de rendimientos ─── */
     lista: { padding: 0, marginBottom: spacing.md },
@@ -282,13 +287,13 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     filaInfo: { flex: 1, minWidth: 0 },
     rank: { ...typography.title3, width: 34, textAlign: 'center' },
     rankIcono: { width: 34, textAlign: 'center' },
-    entidad: { ...typography.headline, fontWeight: '600', color: colors.label },
-    tipo: { ...typography.caption1, color: colors.tertiaryLabel },
+    entity: { ...typography.headline, fontWeight: '600', color: colors.label },
+    type: { ...typography.caption1, color: colors.tertiaryLabel },
     filaDer: { alignItems: 'flex-end', gap: 2, flexShrink: 1 },
     veredictoFila: { ...typography.caption2, fontWeight: '600' },
     real: { ...typography.subheadline, fontWeight: '700' },
-    verde: { color: colors.systemGreen },
-    rojo: { color: colors.systemRed },
+    green: { color: colors.systemGreen },
+    red: { color: colors.systemRed },
     tna: { ...typography.caption2, color: colors.tertiaryLabel },
 
     verTodas: {
@@ -299,7 +304,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       paddingVertical: spacing.sm,
       marginBottom: spacing.md,
     },
-    verTodasTexto: { ...typography.footnote, fontWeight: '600', color: colors.brand },
+    verTodasText: { ...typography.footnote, fontWeight: '600', color: colors.brand },
 
     /* ── Footer ─── */
     footer: { gap: spacing.md, marginTop: spacing.md },

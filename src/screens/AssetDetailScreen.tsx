@@ -5,37 +5,37 @@ import api from '../lib/api';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
-import BotonVolver from '../components/BotonVolver';
+import BackButton from '../components/BackButton';
 import Screen from '../components/Screen';
-import GraficoBarras, { type PuntoGrafico } from '../components/GraficoBarras';
-import ExplicarDatosIA from '../components/ExplicarDatosIA';
-import { INFLACION_ESTIMADA_DASHBOARD } from '../constants';
+import BarChart, { type ChartPoint } from '../components/BarChart';
+import ExplainWithAI from '../components/ExplainWithAI';
+import { ESTIMATED_MONTHLY_INFLATION } from '../constants';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
-import type { Activo } from '../domain/activo';
+import type { Asset } from '../domain/asset';
 import { useTheme } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 
-interface ActivoDetalleProps {
-  activo: Activo;
-  onVolver: () => void;
+interface AssetDetailProps {
+  asset: Asset;
+  onBack: () => void;
 }
 
 /**
  * Detalle de un activo de renta fija: tasa actual y tendencia
  * de los últimos 30 días (los datos los guarda el job diario).
  */
-export default function ActivoDetalleScreen({ activo, onVolver }: ActivoDetalleProps) {
+export default function AssetDetailScreen({ asset, onBack }: AssetDetailProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const s = useMemo(() => makeStyles(colors), [colors]);
-  const [historial, setHistorial] = useState<PuntoGrafico[]>([]);
+  const [history, setHistory] = useState<ChartPoint[]>([]);
 
   useEffect(() => {
-    api.get<PuntoGrafico[]>(`/activos/historial/${encodeURIComponent(activo.entidad)}`)
-      .then((r) => setHistorial(r.data))
+    api.get<ChartPoint[]>(`/assets/history/${encodeURIComponent(asset.entity)}`)
+      .then((r) => setHistory(r.data))
       .catch(() => {});
-  }, [activo.entidad]);
+  }, [asset.entity]);
 
   return (
     <Screen>
@@ -43,15 +43,15 @@ export default function ActivoDetalleScreen({ activo, onVolver }: ActivoDetalleP
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: spacing.lg, paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.xxl }}
       >
-        <BotonVolver onPress={onVolver} />
+        <BackButton onPress={onBack} />
 
-        <Header text={activo.entidad} level="title" style={s.titulo} />
-        <View style={s.datos}>
-          <Badge label={activo.tipo} tone="brand" />
-          <Text style={s.tna}>{activo.tna}% TNA</Text>
+        <Header text={asset.entity} level="title" style={s.title} />
+        <View style={s.data}>
+          <Badge label={asset.type} tone="brand" />
+          <Text style={s.tna}>{asset.tna}% TNA</Text>
         </View>
         {(() => {
-          const real = activo.tna / 12 - INFLACION_ESTIMADA_DASHBOARD;
+          const real = asset.tna / 12 - ESTIMATED_MONTHLY_INFLATION;
           return (
             <Badge
               label={real > 0 ? 'Le gana a la inflación' : 'Pierde con la inflación'}
@@ -63,24 +63,24 @@ export default function ActivoDetalleScreen({ activo, onVolver }: ActivoDetalleP
 
         <Card style={s.card}>
           <Header text="Tendencia — últimos 30 días" level="section" style={s.seccion} />
-          {historial.length > 1 ? (
-            <GraficoBarras puntos={historial} prefijo="" />
+          {history.length > 1 ? (
+            <BarChart points={history} prefijo="" />
           ) : (
-            <Text style={s.sinDatos}>Todavía no hay historial suficiente (se acumula día a día).</Text>
+            <Text style={s.sinData}>Todavía no hay historial suficiente (se acumula día a día).</Text>
           )}
         </Card>
 
         <Card style={s.card}>
           <Header text="Riesgo" level="section" style={s.seccion} />
-          <Text style={s.texto}>
+          <Text style={s.text}>
             Renta fija: el rendimiento es contractual (Bajo riesgo). No fluctúa como las
-            acciones o cripto, aunque puede perder contra la inflación.
+            acciones o crypto, aunque puede perder contra la inflación.
           </Text>
         </Card>
 
-        <ExplicarDatosIA datos={
-          `${activo.entidad} (${activo.tipo}): TNA ${activo.tna}% anual. ` +
-          `Rendimiento real mensual estimado ${(activo.tna / 12 - 4).toFixed(2)}% contra una inflación del 4%.`
+        <ExplainWithAI data={
+          `${asset.entity} (${asset.type}): TNA ${asset.tna}% anual. ` +
+          `Rendimiento real mensual estimado ${(asset.tna / 12 - 4).toFixed(2)}% contra una inflación del 4%.`
         } />
       </ScrollView>
     </Screen>
@@ -89,13 +89,13 @@ export default function ActivoDetalleScreen({ activo, onVolver }: ActivoDetalleP
 
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
-    titulo: { marginBottom: spacing.md },
-    datos: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.lg },
+    title: { marginBottom: spacing.md },
+    data: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.lg },
     veredictoBadge: { alignSelf: 'flex-start', marginBottom: spacing.md },
     tna: { ...typography.title2, fontWeight: '700', color: colors.label },
 
     card: { padding: spacing.lg, marginBottom: spacing.lg },
     seccion: { marginBottom: spacing.lg },
-    sinDatos: { ...typography.footnote, color: colors.secondaryLabel },
-    texto: { ...typography.footnote, color: colors.secondaryLabel, lineHeight: 18 },
+    sinData: { ...typography.footnote, color: colors.secondaryLabel },
+    text: { ...typography.footnote, color: colors.secondaryLabel, lineHeight: 18 },
   });

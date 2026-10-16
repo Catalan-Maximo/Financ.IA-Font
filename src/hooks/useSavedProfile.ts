@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { obtenerPerfil } from '../lib/storage';
+import { getProfile } from '../lib/storage';
 
 /**
  * Hook de arranque: lee el perfil guardado en AsyncStorage.
@@ -7,29 +7,29 @@ import { obtenerPerfil } from '../lib/storage';
  * Si existe un perfil de una sesión anterior, `perfilGuardado`
  * lo contiene y App salta el test directamente.
  */
-export default function usePerfilGuardado() {
-  const [perfilGuardado, setPerfilGuardado] = useState<string | null>(null);
-  const [cargando, setCargando] = useState(true);
+export default function useSavedProfile() {
+  const [savedProfile, setSavedProfile] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let activo = true;
+    let asset = true;
 
-    obtenerPerfil()
-      .then((perfil) => {
-        if (activo) setPerfilGuardado(perfil);
+    getProfile()
+      .then((profile) => {
+        if (asset) setSavedProfile(profile);
       })
       .catch((error) => {
         // Si el storage falla, arrancamos como si no hubiera perfil
         console.warn('No se pudo leer el perfil guardado', error);
       })
       .finally(() => {
-        if (activo) setCargando(false);
+        if (asset) setLoading(false);
       });
 
     return () => {
-      activo = false;
+      asset = false;
     };
   }, []);
 
-  return { perfilGuardado, cargando };
+  return { savedProfile, loading };
 }

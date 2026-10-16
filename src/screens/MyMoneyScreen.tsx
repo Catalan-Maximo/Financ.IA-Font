@@ -7,19 +7,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Screen from '../components/Screen';
-import EstadoVacio from '../components/EstadoVacio';
+import EmptyState from '../components/EmptyState';
 import SegmentedTabs from '../components/SegmentedTabs';
-import BarraProgreso from '../components/BarraProgreso';
-import Cargando from '../components/Cargando';
+import ProgressBar from '../components/ProgressBar';
+import Loading from '../components/Loading';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
-import useMiDinero from '../hooks/useMiDinero';
-import { ACTIVOS_PORTFOLIO, CATEGORIAS_GASTO } from '../domain/midinero';
+import useMyMoney from '../hooks/useMyMoney';
+import { PORTFOLIO_ASSETS, EXPENSE_CATEGORIES } from '../domain/myMoney';
 import { useTheme } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import { radius } from '../theme/radius';
 
-type TabMiDinero = 'portafolio' | 'metas' | 'gastos';
+type TabMyMoney = 'portafolio' | 'metas' | 'gastos';
 
 const TABS_MIDINERO = [
   { key: 'gastos', label: 'Gastos' },
@@ -34,21 +34,25 @@ const formatPesos = (v: number) =>
  * Mi Dinero: portafolio personal (P&L con precios reales) y metas
  * de ahorro con barra de progreso.
  */
-export default function MiDineroScreen() {
-  const [tab, setTab] = useState<TabMiDinero>('gastos');
+/**
+ * Pantalla Mi Dinero: ingreso mensual, gastos por categoría,
+ * metas de ahorro y posiciones de inversión del usuario.
+ */
+export default function MyMoneyScreen() {
+  const [tab, setTab] = useState<TabMyMoney>('gastos');
   const {
-    posiciones, metas, gastos, resumen, loading,
-    agregarPosicion, eliminarPosicion, crearMeta, aportarMeta, eliminarMeta,
-    agregarGasto, eliminarGasto, guardarIngreso,
-  } = useMiDinero();
+    positions, goals, expenses, resumen, loading,
+    addPosition, deletePosition, createGoal, aportarMeta, deleteGoal,
+    addExpense, deleteExpense, saveIncome,
+  } = useMyMoney();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
   // Formulario de posición
-  const [activo, setActivo] = useState(ACTIVOS_PORTFOLIO[0]);
-  const [cantidad, setCantidad] = useState('10');
-  const [precio, setPrecio] = useState('');
+  const [asset, setAsset] = useState(PORTFOLIO_ASSETS[0]);
+  const [quantity, setQuantity] = useState('10');
+  const [price, setPrice] = useState('');
 
   // Formulario de meta
   const [nombreMeta, setNombreMeta] = useState('');
@@ -57,26 +61,26 @@ export default function MiDineroScreen() {
 
   // Aporte inline por meta
   const [aporteMetaId, setAporteMetaId] = useState<number | null>(null);
-  const [aporteMonto, setAporteMonto] = useState('');
+  const [aporteAmount, setAporteAmount] = useState('');
 
   // Formulario de gasto
-  const [categoriaGasto, setCategoriaGasto] = useState(CATEGORIAS_GASTO[0]);
-  const [descripcionGasto, setDescripcionGasto] = useState('');
-  const [montoGasto, setMontoGasto] = useState('');
+  const [categoriaExpense, setCategoriaExpense] = useState(EXPENSE_CATEGORIES[0]);
+  const [descripcionExpense, setDescripcionExpense] = useState('');
+  const [montoExpense, setMontoExpense] = useState('');
 
   // Ingreso mensual
-  const [ingresoTexto, setIngresoTexto] = useState('');
+  const [ingresoText, setIngresoText] = useState('');
 
   const agregarPos = async () => {
-    const cant = parseFloat(cantidad);
-    const prec = parseFloat(precio || '0');
+    const cant = parseFloat(quantity);
+    const prec = parseFloat(price || '0');
     if (!prec || !cant) {
       Alert.alert('Error', 'Completá cantidad y precio de compra.');
       return;
     }
-    await agregarPosicion(activo, cant, prec);
-    setPrecio('');
-    setCantidad('10');
+    await addPosition(asset, cant, prec);
+    setPrice('');
+    setQuantity('10');
   };
 
   const crear = async () => {
@@ -85,30 +89,30 @@ export default function MiDineroScreen() {
       Alert.alert('Error', 'Completá nombre y monto objetivo.');
       return;
     }
-    await crearMeta(nombreMeta.trim(), obj, fechaMeta);
+    await createGoal(nombreMeta.trim(), obj, fechaMeta);
     setNombreMeta('');
     setObjetivo('');
   };
 
   const confirmarAporte = async () => {
-    const monto = parseFloat(aporteMonto);
-    if (aporteMetaId != null && monto > 0) {
-      await aportarMeta(aporteMetaId, monto);
+    const amount = parseFloat(aporteAmount);
+    if (aporteMetaId != null && amount > 0) {
+      await aportarMeta(aporteMetaId, amount);
     }
     setAporteMetaId(null);
-    setAporteMonto('');
+    setAporteAmount('');
   };
 
   if (loading) {
     return (
       <Screen>
-        <Cargando style={s.loading} />
+        <Loading style={s.loading} />
       </Screen>
     );
   }
 
-  const totalValor = posiciones.reduce((acc, p) => acc + p.valorActual, 0);
-  const totalGanancia = posiciones.reduce((acc, p) => acc + p.ganancia, 0);
+  const totalValue = positions.reduce((acc, p) => acc + p.currentValue, 0);
+  const totalGain = positions.reduce((acc, p) => acc + p.gain, 0);
 
   return (
     <Screen safeTop={false}>
@@ -119,28 +123,28 @@ export default function MiDineroScreen() {
           paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.xxl,
         }}
       >
-        <Header text="Mi Dinero" level="title" style={s.titulo} />
+        <Header text="Mi Dinero" level="title" style={s.title} />
 
         {/* Top Tabs */}
         <SegmentedTabs
-          opciones={TABS_MIDINERO}
+          options={TABS_MIDINERO}
           activa={tab}
-          onCambiar={(t) => setTab(t as TabMiDinero)}
+          onCambiar={(t) => setTab(t as TabMyMoney)}
         />
 
         {tab === 'portafolio' && (
           <>
             {/* Resumen */}
-            {posiciones.length > 0 && (
+            {positions.length > 0 && (
               <Card style={s.resumen}>
                 <View style={s.resumenFila}>
                   <Text style={s.resumenLabel}>Valor total</Text>
-                  <Text style={s.resumenValor}>{formatPesos(totalValor)}</Text>
+                  <Text style={s.resumenValue}>{formatPesos(totalValue)}</Text>
                 </View>
                 <View style={s.resumenFila}>
                   <Text style={s.resumenLabel}>Ganancia total</Text>
-                  <Text style={[s.resumenValor, totalGanancia >= 0 ? s.verde : s.rojo]}>
-                    {totalGanancia >= 0 ? '+' : ''}{formatPesos(totalGanancia)}
+                  <Text style={[s.resumenValue, totalGain >= 0 ? s.green : s.red]}>
+                    {totalGain >= 0 ? '+' : ''}{formatPesos(totalGain)}
                   </Text>
                 </View>
               </Card>
@@ -148,77 +152,77 @@ export default function MiDineroScreen() {
 
             {/* Formulario */}
             <Card style={s.form}>
-              <Header text="Agregar posición" level="section" style={s.formTitulo} />
+              <Header text="Agregar posición" level="section" style={s.formTitle} />
               <View style={s.chips}>
-                {ACTIVOS_PORTFOLIO.map((a) => (
+                {PORTFOLIO_ASSETS.map((a) => (
                   <Pressable
                     key={a}
-                    onPress={() => setActivo(a)}
-                    style={[s.chip, activo === a && s.chipActivo]}
+                    onPress={() => setAsset(a)}
+                    style={[s.chip, asset === a && s.chipAsset]}
                   >
-                    <Text style={[s.chipTexto, activo === a && s.chipTextoActivo]}>{a}</Text>
+                    <Text style={[s.chipText, asset === a && s.chipTextoAsset]}>{a}</Text>
                   </Pressable>
                 ))}
               </View>
               <View style={s.filaInputs}>
                 <TextInput
                   style={s.input}
-                  value={cantidad}
-                  onChangeText={setCantidad}
+                  value={quantity}
+                  onChangeText={setQuantity}
                   keyboardType="numeric"
                   placeholder="Cantidad"
                   placeholderTextColor={colors.tertiaryLabel}
                 />
                 <TextInput
                   style={s.input}
-                  value={precio}
-                  onChangeText={setPrecio}
+                  value={price}
+                  onChangeText={setPrice}
                   keyboardType="numeric"
                   placeholder="Precio de compra"
                   placeholderTextColor={colors.tertiaryLabel}
                 />
               </View>
-              <Pressable style={({ pressed }) => [s.boton, pressed && s.botonPressed]} onPress={agregarPos}>
-                <Text style={s.botonTexto}>Agregar</Text>
+              <Pressable style={({ pressed }) => [s.button, pressed && s.botonPressed]} onPress={agregarPos}>
+                <Text style={s.botonText}>Agregar</Text>
               </Pressable>
             </Card>
 
             {/* Lista */}
-            {posiciones.map((p) => (
+            {positions.map((p) => (
               <Card key={p.id} style={s.posicion}>
                 <View style={s.posHeader}>
-                  <Text style={s.posActivo} numberOfLines={1}>{p.activo}</Text>
-                  <Text style={[s.posGanancia, p.ganancia >= 0 ? s.verde : s.rojo]}>
-                    {p.ganancia >= 0 ? '+' : ''}{p.gananciaPct.toFixed(2)}%
+                  <Text style={s.posAsset} numberOfLines={1}>{p.asset}</Text>
+                  <Text style={[s.posGain, p.gain >= 0 ? s.green : s.red]}>
+                    {p.gain >= 0 ? '+' : ''}{p.gainPct.toFixed(2)}%
                   </Text>
                 </View>
-                <Text style={s.posDetalle} numberOfLines={1}>
-                  {p.cantidad} × {formatPesos(p.precioCompra)} → {formatPesos(p.precioActual)} ahora
+                <Text style={s.posDetail} numberOfLines={1}>
+                  {p.quantity} × {formatPesos(p.purchasePrice)} → {formatPesos(p.currentPrice)} ahora
                 </Text>
-                {p.alerta && (
+                {p.alert && (
                   <View style={s.stopLoss}>
                     <Ionicons name="warning" size={16} color={colors.systemRed} />
-                    <Text style={s.stopLossTexto}>
-                      Stop-loss: cayó más del 10% desde tu compra
+                    <Text style={s.stopLossText}>
+                      Stop-loss: cayó más del 10% since tu buyPrice
                     </Text>
                   </View>
                 )}
                 <View style={s.posPie}>
-                  <Text style={s.posValor} numberOfLines={1}>
-                    {formatPesos(p.valorActual)} · {p.ganancia >= 0 ? '+' : ''}{formatPesos(p.ganancia)}
+                  <Text style={s.posValue} numberOfLines={1}>
+                    {formatPesos(p.currentValue)} · {p.gain >= 0 ? '+' : ''}{formatPesos(p.gain)}
                   </Text>
-                  <Pressable onPress={() => eliminarPosicion(p.id)} hitSlop={8}>
+                  <Pressable onPress={() => deletePosition(p.id)} hitSlop={8}>
                     <Ionicons name="trash-outline" size={18} color={colors.systemRed} />
                   </Pressable>
                 </View>
               </Card>
             ))}
 
-            {posiciones.length === 0 && (
-              <EstadoVacio
+            {positions.length === 0 && (
+              <EmptyState
                 icono="briefcase-outline"
-                titulo="Todavía no tenés posiciones"
-                detalle="Cargá tu primera posición para seguir tu plata real."
+                title="Todavía no tenés posiciones"
+                detail="Cargá tu primera posición para seguir tu plata real."
               />
             )}
           </>
@@ -227,7 +231,7 @@ export default function MiDineroScreen() {
         {tab === 'metas' && (
           <>
             <Card style={s.form}>
-              <Header text="Nueva meta" level="section" style={s.formTitulo} />
+              <Header text="Nueva meta" level="section" style={s.formTitle} />
               <TextInput
                 style={s.inputFull}
                 value={nombreMeta}
@@ -252,23 +256,23 @@ export default function MiDineroScreen() {
                   placeholderTextColor={colors.tertiaryLabel}
                 />
               </View>
-              <Pressable style={({ pressed }) => [s.boton, pressed && s.botonPressed]} onPress={crear}>
-                <Text style={s.botonTexto}>Crear meta</Text>
+              <Pressable style={({ pressed }) => [s.button, pressed && s.botonPressed]} onPress={crear}>
+                <Text style={s.botonText}>Crear meta</Text>
               </Pressable>
             </Card>
 
-            {metas.map((m) => {
-              const pct = m.montoObjetivo > 0
-                ? Math.min(100, (m.montoActual / m.montoObjetivo) * 100) : 0;
+            {goals.map((m) => {
+              const pct = m.targetAmount > 0
+                ? Math.min(100, (m.currentAmount / m.targetAmount) * 100) : 0;
               return (
                 <Card key={m.id} style={s.posicion}>
                   <View style={s.posHeader}>
-                    <Text style={s.posActivo} numberOfLines={1}>{m.nombre}</Text>
+                    <Text style={s.posAsset} numberOfLines={1}>{m.name}</Text>
                     <Text style={s.metaPct}>{pct.toFixed(0)}%</Text>
                   </View>
-                  <BarraProgreso progreso={pct} style={s.progressTrack} />
-                  <Text style={s.posDetalle} numberOfLines={1}>
-                    {formatPesos(m.montoActual)} de {formatPesos(m.montoObjetivo)} · hasta {m.fechaLimite}
+                  <ProgressBar progreso={pct} style={s.progressTrack} />
+                  <Text style={s.posDetail} numberOfLines={1}>
+                    {formatPesos(m.currentAmount)} de {formatPesos(m.targetAmount)} · hasta {m.deadline}
                   </Text>
 
                   <View style={s.metaAcciones}>
@@ -276,22 +280,22 @@ export default function MiDineroScreen() {
                       <View style={s.aporteFila}>
                         <TextInput
                           style={[s.input, s.aporteInput]}
-                          value={aporteMonto}
-                          onChangeText={setAporteMonto}
+                          value={aporteAmount}
+                          onChangeText={setAporteAmount}
                           keyboardType="numeric"
                           placeholder="Monto $"
                           placeholderTextColor={colors.tertiaryLabel}
                         />
-                        <Pressable style={[s.boton, s.botonChico]} onPress={confirmarAporte}>
-                          <Text style={s.botonTexto}>OK</Text>
+                        <Pressable style={[s.button, s.botonChico]} onPress={confirmarAporte}>
+                          <Text style={s.botonText}>OK</Text>
                         </Pressable>
                       </View>
                     ) : (
-                      <Pressable style={[s.boton, s.botonChico]} onPress={() => setAporteMetaId(m.id)}>
-                        <Text style={s.botonTexto}>+ Aportar</Text>
+                      <Pressable style={[s.button, s.botonChico]} onPress={() => setAporteMetaId(m.id)}>
+                        <Text style={s.botonText}>+ Aportar</Text>
                       </Pressable>
                     )}
-                    <Pressable onPress={() => eliminarMeta(m.id)} hitSlop={8}>
+                    <Pressable onPress={() => deleteGoal(m.id)} hitSlop={8}>
                       <Ionicons name="trash-outline" size={18} color={colors.systemRed} />
                     </Pressable>
                   </View>
@@ -299,11 +303,11 @@ export default function MiDineroScreen() {
               );
             })}
 
-            {metas.length === 0 && (
-              <EstadoVacio
+            {goals.length === 0 && (
+              <EmptyState
                 icono="flag-outline"
-                titulo="Todavía no tenés metas"
-                detalle="Creá tu primera meta y empezá a medir tu progreso."
+                title="Todavía no tenés metas"
+                detail="Creá tu primera meta y empezá a medir tu progreso."
               />
             )}
           </>
@@ -314,26 +318,26 @@ export default function MiDineroScreen() {
             {/* Resumen del mes */}
             {resumen && (
               <Card style={s.resumen}>
-                <Header text="Este mes" level="section" style={s.formTitulo} />
+                <Header text="Este mes" level="section" style={s.formTitle} />
 
                 <Text style={s.resumenLabel}>Ingreso mensual</Text>
                 <View style={s.ingresoFila}>
                   <TextInput
                     style={[s.input, s.ingresoInput]}
-                    value={ingresoTexto || (resumen.ingreso > 0 ? String(resumen.ingreso) : '')}
-                    onChangeText={setIngresoTexto}
+                    value={ingresoText || (resumen.income > 0 ? String(resumen.income) : '')}
+                    onChangeText={setIngresoText}
                     keyboardType="numeric"
                     placeholder="Declarar ingreso"
                     placeholderTextColor={colors.tertiaryLabel}
                   />
                   <Pressable
-                    style={[s.boton, s.botonOk]}
+                    style={[s.button, s.botonOk]}
                     onPress={() => {
-                      const m = parseFloat(ingresoTexto);
-                      if (m > 0) guardarIngreso(m);
+                      const m = parseFloat(ingresoText);
+                      if (m > 0) saveIncome(m);
                     }}
                   >
-                    <Text style={s.botonTexto}>OK</Text>
+                    <Text style={s.botonText}>OK</Text>
                   </Pressable>
                 </View>
 
@@ -341,32 +345,32 @@ export default function MiDineroScreen() {
 
                 <View style={s.resumenFila}>
                   <Text style={s.resumenLabel}>Total gastado</Text>
-                  <Text style={s.resumenValor} numberOfLines={1}>{formatPesos(resumen.total)}</Text>
+                  <Text style={s.resumenValue} numberOfLines={1}>{formatPesos(resumen.total)}</Text>
                 </View>
                 <View style={s.resumenFila}>
                   <Text style={s.resumenLabel}>Te sobra</Text>
                   <Text
-                    style={[s.resumenValor, (resumen.sobra ?? 0) >= 0 ? s.verde : s.rojo]}
+                    style={[s.resumenValue, (resumen.leftover ?? 0) >= 0 ? s.green : s.red]}
                     numberOfLines={1}
                   >
-                    {resumen.sobra != null ? formatPesos(resumen.sobra) : 'Declará tu ingreso'}
+                    {resumen.leftover != null ? formatPesos(resumen.leftover) : 'Declará tu ingreso'}
                   </Text>
                 </View>
               </Card>
             )}
 
             {/* Por categoría */}
-            {resumen && Object.keys(resumen.porCategoria).length > 0 && (
+            {resumen && Object.keys(resumen.byCategory).length > 0 && (
               <Card style={s.posicion}>
-                <Header text="Gastos por categoría" level="section" style={s.formTitulo} />
-                {Object.entries(resumen.porCategoria).map(([cat, monto]) => {
-                  const maxCat = Math.max(...Object.values(resumen.porCategoria), 1);
-                  const ancho = Math.max((monto / maxCat) * 100, 6);
+                <Header text="Gastos por categoría" level="section" style={s.formTitle} />
+                {Object.entries(resumen.byCategory).map(([cat, amount]) => {
+                  const maxCat = Math.max(...Object.values(resumen.byCategory), 1);
+                  const ancho = Math.max((amount / maxCat) * 100, 6);
                   return (
                     <View key={cat} style={s.categoriaFila}>
-                      <Text style={s.categoriaNombre}>{cat}</Text>
-                      <BarraProgreso progreso={ancho} style={s.categoriaTrack} />
-                      <Text style={s.categoriaMonto} numberOfLines={1}>{formatPesos(monto)}</Text>
+                      <Text style={s.categoriaName}>{cat}</Text>
+                      <ProgressBar progreso={ancho} style={s.categoriaTrack} />
+                      <Text style={s.categoriaAmount} numberOfLines={1}>{formatPesos(amount)}</Text>
                     </View>
                   );
                 })}
@@ -374,14 +378,14 @@ export default function MiDineroScreen() {
             )}
 
             {/* Metas: cuánto necesito por mes */}
-            {resumen && resumen.metasMensuales.length > 0 && (
+            {resumen && resumen.monthlyGoals.length > 0 && (
               <Card style={s.posicion}>
-                <Header text="Para tus metas" level="section" style={s.formTitulo} />
-                {resumen.metasMensuales.map((m) => (
-                  <View key={m.nombre} style={s.categoriaFila}>
-                    <Text style={s.categoriaNombre} numberOfLines={1}>{m.nombre}</Text>
-                    <Text style={s.categoriaMonto} numberOfLines={1}>
-                      {formatPesos(m.porMes)}/mes · faltan {formatPesos(m.faltante)}
+                <Header text="Para tus metas" level="section" style={s.formTitle} />
+                {resumen.monthlyGoals.map((m) => (
+                  <View key={m.name} style={s.categoriaFila}>
+                    <Text style={s.categoriaName} numberOfLines={1}>{m.name}</Text>
+                    <Text style={s.categoriaAmount} numberOfLines={1}>
+                      {formatPesos(m.perMonth)}/mes · faltan {formatPesos(m.remaining)}
                     </Text>
                   </View>
                 ))}
@@ -390,75 +394,75 @@ export default function MiDineroScreen() {
 
             {/* Formulario de gasto */}
             <Card style={s.form}>
-              <Header text="Agregar gasto" level="section" style={s.formTitulo} />
+              <Header text="Agregar gasto" level="section" style={s.formTitle} />
               <View style={s.chips}>
-                {CATEGORIAS_GASTO.map((c) => (
+                {EXPENSE_CATEGORIES.map((c) => (
                   <Pressable
                     key={c}
-                    onPress={() => setCategoriaGasto(c)}
-                    style={[s.chip, categoriaGasto === c && s.chipActivo]}
+                    onPress={() => setCategoriaExpense(c)}
+                    style={[s.chip, categoriaExpense === c && s.chipAsset]}
                   >
-                    <Text style={[s.chipTexto, categoriaGasto === c && s.chipTextoActivo]}>{c}</Text>
+                    <Text style={[s.chipText, categoriaExpense === c && s.chipTextoAsset]}>{c}</Text>
                   </Pressable>
                 ))}
               </View>
               <View style={s.filaInputs}>
                 <TextInput
                   style={s.input}
-                  value={descripcionGasto}
-                  onChangeText={setDescripcionGasto}
+                  value={descripcionExpense}
+                  onChangeText={setDescripcionExpense}
                   placeholder="Descripción"
                   placeholderTextColor={colors.tertiaryLabel}
                 />
                 <TextInput
                   style={s.input}
-                  value={montoGasto}
-                  onChangeText={setMontoGasto}
+                  value={montoExpense}
+                  onChangeText={setMontoExpense}
                   keyboardType="numeric"
                   placeholder="Monto $"
                   placeholderTextColor={colors.tertiaryLabel}
                 />
               </View>
               <Pressable
-                style={({ pressed }) => [s.boton, pressed && s.botonPressed]}
+                style={({ pressed }) => [s.button, pressed && s.botonPressed]}
                 onPress={async () => {
-                  const m = parseFloat(montoGasto);
+                  const m = parseFloat(montoExpense);
                   if (!m) {
                     Alert.alert('Error', 'Poné el monto del gasto.');
                     return;
                   }
-                  await agregarGasto(categoriaGasto, descripcionGasto, m);
-                  setMontoGasto('');
-                  setDescripcionGasto('');
+                  await addExpense(categoriaExpense, descripcionExpense, m);
+                  setMontoExpense('');
+                  setDescripcionExpense('');
                 }}
               >
-                <Text style={s.botonTexto}>Agregar</Text>
+                <Text style={s.botonText}>Agregar</Text>
               </Pressable>
             </Card>
 
             {/* Lista de gastos */}
-            {gastos.map((g) => (
+            {expenses.map((g) => (
               <Card key={g.id} style={s.posicion}>
                 <View style={s.posHeader}>
-                  <Text style={s.posActivo} numberOfLines={1}>
-                    {g.categoria}{g.descripcion ? ` · ${g.descripcion}` : ''}
+                  <Text style={s.posAsset} numberOfLines={1}>
+                    {g.category}{g.description ? ` · ${g.description}` : ''}
                   </Text>
-                  <Text style={s.posValor}>{formatPesos(g.monto)}</Text>
+                  <Text style={s.posValue}>{formatPesos(g.amount)}</Text>
                 </View>
                 <View style={s.posPie}>
-                  <Text style={s.posDetalle}>{g.fecha}</Text>
-                  <Pressable onPress={() => eliminarGasto(g.id)} hitSlop={8}>
+                  <Text style={s.posDetail}>{g.date}</Text>
+                  <Pressable onPress={() => deleteExpense(g.id)} hitSlop={8}>
                     <Ionicons name="trash-outline" size={18} color={colors.systemRed} />
                   </Pressable>
                 </View>
               </Card>
             ))}
 
-            {gastos.length === 0 && (
-              <EstadoVacio
+            {expenses.length === 0 && (
+              <EmptyState
                 icono="receipt-outline"
-                titulo="Todavía no tenés gastos"
-                detalle="Cargá tus gastos del mes para ver en qué se va tu plata."
+                title="Todavía no tenés gastos"
+                detail="Cargá tus gastos del mes para ver en qué se va tu plata."
               />
             )}
           </>
@@ -471,7 +475,7 @@ export default function MiDineroScreen() {
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
     loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    titulo: { marginBottom: spacing.lg },
+    title: { marginBottom: spacing.lg },
 
     resumen: { padding: spacing.lg, marginBottom: spacing.lg },
     resumenFila: {
@@ -482,7 +486,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       marginTop: spacing.sm,
     },
     resumenLabel: { ...typography.footnote, color: colors.secondaryLabel },
-    resumenValor: { ...typography.title3, fontWeight: '700', color: colors.label, flexShrink: 1, textAlign: 'right' },
+    resumenValue: { ...typography.title3, fontWeight: '700', color: colors.label, flexShrink: 1, textAlign: 'right' },
     resumenDivisor: {
       height: StyleSheet.hairlineWidth,
       backgroundColor: colors.separator,
@@ -490,7 +494,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     },
 
     form: { padding: spacing.lg, marginBottom: spacing.lg },
-    formTitulo: { marginBottom: spacing.md },
+    formTitle: { marginBottom: spacing.md },
     chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
     chip: {
       backgroundColor: colors.tertiarySystemBackground,
@@ -498,9 +502,9 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       paddingVertical: spacing.xs,
       paddingHorizontal: spacing.md,
     },
-    chipActivo: { backgroundColor: colors.brand },
-    chipTexto: { ...typography.caption1, color: colors.secondaryLabel },
-    chipTextoActivo: { color: colors.onBrand, fontWeight: '600' },
+    chipAsset: { backgroundColor: colors.brand },
+    chipText: { ...typography.caption1, color: colors.secondaryLabel },
+    chipTextoAsset: { color: colors.onBrand, fontWeight: '600' },
 
     filaInputs: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
     input: {
@@ -522,7 +526,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       marginBottom: spacing.md,
     },
 
-    boton: {
+    button: {
       backgroundColor: colors.brand,
       borderRadius: radius.md,
       paddingVertical: spacing.sm,
@@ -531,14 +535,14 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     },
     botonPressed: { opacity: 0.85 },
     botonChico: { alignSelf: 'flex-start' },
-    botonTexto: { ...typography.subheadline, fontWeight: '700', color: colors.onBrand },
+    botonText: { ...typography.subheadline, fontWeight: '700', color: colors.onBrand },
 
     posicion: { padding: spacing.lg, marginBottom: spacing.md },
     posHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md },
-    posActivo: { ...typography.headline, fontWeight: '700', color: colors.label, flex: 1 },
-    posGanancia: { ...typography.subheadline, fontWeight: '700' },
-    posDetalle: { ...typography.caption1, color: colors.secondaryLabel, marginTop: spacing.xs },
-    posValor: { ...typography.footnote, fontWeight: '600', color: colors.label, flex: 1 },
+    posAsset: { ...typography.headline, fontWeight: '700', color: colors.label, flex: 1 },
+    posGain: { ...typography.subheadline, fontWeight: '700' },
+    posDetail: { ...typography.caption1, color: colors.secondaryLabel, marginTop: spacing.xs },
+    posValue: { ...typography.footnote, fontWeight: '600', color: colors.label, flex: 1 },
     posPie: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -557,7 +561,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       paddingHorizontal: spacing.md,
       marginTop: spacing.sm,
     },
-    stopLossTexto: { ...typography.caption1, fontWeight: '600', color: colors.systemRed, flex: 1 },
+    stopLossText: { ...typography.caption1, fontWeight: '600', color: colors.systemRed, flex: 1 },
 
     progressTrack: { marginTop: spacing.md },
 
@@ -570,8 +574,8 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     aporteFila: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 },
     aporteInput: { flex: 1 },
 
-    verde: { color: colors.systemGreen },
-    rojo: { color: colors.systemRed },
+    green: { color: colors.systemGreen },
+    red: { color: colors.systemRed },
 
     ingresoFila: {
       flexDirection: 'row',
@@ -587,9 +591,9 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       gap: spacing.sm,
       marginTop: spacing.sm,
     },
-    categoriaNombre: { ...typography.footnote, color: colors.label, flex: 1 },
+    categoriaName: { ...typography.footnote, color: colors.label, flex: 1 },
     categoriaTrack: { flex: 1.5 },
-    categoriaMonto: {
+    categoriaAmount: {
       ...typography.footnote,
       fontWeight: '600',
       color: colors.label,

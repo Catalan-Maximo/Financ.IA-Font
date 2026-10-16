@@ -8,7 +8,7 @@ import { spacing } from '../theme/spacing';
  * Botón circular para volver atrás: un solo gesto, misma posición
  * y mismo tamaño en todas las pantallas de detalle de la app.
  */
-export default function BotonVolver({ onPress }: { onPress: () => void }) {
+export default function BackButton({ onPress }: { onPress: () => void }) {
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 

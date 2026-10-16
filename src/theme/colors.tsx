@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
-import { guardarTema, obtenerTema } from '../lib/storage';
+import { saveTheme, getTheme } from '../lib/storage';
 
 /**
  * Paleta semántica estilo iOS (system colors) de FinancIA.
@@ -140,7 +140,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>('system');
 
   useEffect(() => {
-    obtenerTema().then((tema) => {
+    getTheme().then((tema) => {
       if (tema === 'light' || tema === 'dark' || tema === 'system') {
         setModeState(tema);
       }
@@ -149,7 +149,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setMode = (nuevo: ThemeMode) => {
     setModeState(nuevo);
-    guardarTema(nuevo);
+    saveTheme(nuevo);
   };
 
   const efectivo = mode === 'system' ? scheme : mode;

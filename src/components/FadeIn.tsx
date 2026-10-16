@@ -15,7 +15,7 @@ interface EntradaProps {
  * (equivalente al FadeInDown de reanimated, con Animated nativo).
  * Cambiar la `key` del padre remonta el bloque y repite la animación.
  */
-export default function Entrada({ children, delay = 0, style }: EntradaProps) {
+export default function FadeIn({ children, delay = 0, style }: EntradaProps) {
   const progreso = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {

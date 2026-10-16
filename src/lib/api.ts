@@ -1,6 +1,6 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
-import { borrarToken, obtenerToken } from './storage';
+import { removeToken, getToken } from './storage';
 
 // Auto-detecta la IP de la Mac donde corre Expo (y el backend).
 // El celular se conecta al servidor de Expo por esa IP, así que
@@ -19,7 +19,7 @@ const api = axios.create({
 
 // Adjunta el JWT en cada petición
 api.interceptors.request.use(async (config) => {
-  const token = await obtenerToken();
+  const token = await getToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -27,9 +27,9 @@ api.interceptors.request.use(async (config) => {
 });
 
 // Callback que AuthContext registra para reaccionar a un 401
-let onNoAutorizado: (() => void) | null = null;
-export function setOnNoAutorizado(fn: (() => void) | null) {
-  onNoAutorizado = fn;
+let onUnauthorized: (() => void) | null = null;
+export function setOnUnauthorized(fn: (() => void) | null) {
+  onUnauthorized = fn;
 }
 
 // Token vencido o inválido → limpiamos la sesión local y volvemos al login
@@ -37,8 +37,8 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      await borrarToken();
-      onNoAutorizado?.();
+      await removeToken();
+      onUnauthorized?.();
     }
     return Promise.reject(error);
   },

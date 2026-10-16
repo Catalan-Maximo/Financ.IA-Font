@@ -8,13 +8,13 @@ import api from '../lib/api';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
-import BotonVolver from '../components/BotonVolver';
-import Cargando from '../components/Cargando';
-import BarraProgreso from '../components/BarraProgreso';
+import BackButton from '../components/BackButton';
+import Loading from '../components/Loading';
+import ProgressBar from '../components/ProgressBar';
 import Screen from '../components/Screen';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
-import type { RendimientoDTO } from '../domain/inversion';
-import type { Activo } from '../domain/activo';
+import type { Performance } from '../domain/investment';
+import type { Asset } from '../domain/asset';
 import { useTheme } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
@@ -30,25 +30,25 @@ const EXTRAS = [
 ];
 
 interface VersusResponse {
-  activoA: RendimientoDTO;
-  activoB: RendimientoDTO;
+  activoA: Performance;
+  activoB: Performance;
   ganador: string;
   probabilidadA: number | null;
-  mensaje: string;
+  message: string;
 }
 
 interface VersusScreenProps {
-  onVolver: () => void;
+  onBack: () => void;
 }
 
 /** Selector táctil de un activo (abre un modal con la lista). */
-function SelectorActivo({
-  titulo, seleccion, opciones, onElegir,
+function SelectorAsset({
+  title, seleccion, options, onElegir,
 }: {
-  titulo: string;
+  title: string;
   seleccion: string;
-  opciones: string[];
-  onElegir: (nombre: string) => void;
+  options: string[];
+  onElegir: (name: string) => void;
 }) {
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
@@ -57,8 +57,8 @@ function SelectorActivo({
   return (
     <>
       <Pressable style={({ pressed }) => [s.selector, pressed && s.selectorPressed]} onPress={() => setAbierto(true)}>
-        <Text style={s.selectorTitulo}>{titulo}</Text>
-        <Text style={s.selectorValor} numberOfLines={1}>{seleccion}</Text>
+        <Text style={s.selectorTitle}>{title}</Text>
+        <Text style={s.selectorValue} numberOfLines={1}>{seleccion}</Text>
         <Ionicons name="chevron-down" size={16} color={colors.tertiaryLabel} />
       </Pressable>
 
@@ -67,13 +67,13 @@ function SelectorActivo({
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setAbierto(false)} />
           <View style={s.modalPanel}>
             <ScrollView>
-              {opciones.map((opcion) => (
+              {options.map((opcion) => (
                 <Pressable
                   key={opcion}
                   style={({ pressed }) => [s.opcion, pressed && s.selectorPressed]}
                   onPress={() => { onElegir(opcion); setAbierto(false); }}
                 >
-                  <Text style={s.opcionTexto}>{opcion}</Text>
+                  <Text style={s.opcionText}>{opcion}</Text>
                   {opcion === seleccion && <Ionicons name="checkmark" size={18} color={colors.brand} />}
                 </Pressable>
               ))}
@@ -89,71 +89,75 @@ const formatPesos = (v: number) =>
   `$${v.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /** Tarjeta de resultado de un lado del versus. */
-function CardResultado({ titulo, r }: { titulo: string; r: RendimientoDTO }) {
+function CardResultado({ title, r }: { title: string; r: Performance }) {
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
   // Mismas líneas siempre (la de rango muestra "—" en renta fija):
   // así las dos tarjetas quedan simétricas en alto.
-  const rango = r.peorEscenario != null && r.mejorEscenario != null
-    ? `${r.peorEscenario.toFixed(0)}% a +${r.mejorEscenario.toFixed(0)}%`
+  const rango = r.worstCase != null && r.bestCase != null
+    ? `${r.worstCase.toFixed(0)}% a +${r.bestCase.toFixed(0)}%`
     : '—';
 
   return (
     <Card style={s.resultCard}>
-      <Text style={s.resultTitulo}>{titulo}</Text>
-      <Text style={s.resultEntidad} numberOfLines={1}>{r.entidad}</Text>
-      <Text style={[s.resultReal, r.leGanaALaInflacion ? s.verde : s.rojo]}>
-        {r.tasaRealMensual > 0 ? '+' : ''}{r.tasaRealMensual}% real
+      <Text style={s.resultTitle}>{title}</Text>
+      <Text style={s.resultEntity} numberOfLines={1}>{r.entity}</Text>
+      <Text style={[s.resultReal, r.beatsInflation ? s.green : s.red]}>
+        {r.realMonthlyRate > 0 ? '+' : ''}{r.realMonthlyRate}% real
       </Text>
-      <Text style={s.resultDetalle}>Riesgo: {r.riesgo}</Text>
-      <Text style={s.resultDetalle}>Rango: {rango}</Text>
+      <Text style={s.resultDetail}>Riesgo: {r.risk}</Text>
+      <Text style={s.resultDetail}>Rango: {rango}</Text>
     </Card>
   );
 }
 
-export default function VersusScreen({ onVolver }: VersusScreenProps) {
+/**
+ * Comparador Versus: dos activos cara a cara con sus métricas
+ * clave para decidir cuál conviene.
+ */
+export default function VersusScreen({ onBack }: VersusScreenProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
-  const [opciones, setOpciones] = useState<string[]>(EXTRAS);
+  const [options, setOptions] = useState<string[]>(EXTRAS);
   const [ladoA, setLadoA] = useState('Plazo Fijo Tradicional');
   const [ladoB, setLadoB] = useState('Bitcoin');
-  const [monto, setMonto] = useState(100000);
-  const [plazo, setPlazo] = useState(6);
-  const [inflacion, setInflacion] = useState(2.1);
-  const [cargando, setCargando] = useState(true);
+  const [amount, setAmount] = useState(100000);
+  const [term, setTerm] = useState(6);
+  const [inflation, setInflation] = useState(2.1);
+  const [loading, setLoading] = useState(true);
   const [calculando, setCalculando] = useState(false);
   const [resultado, setResultado] = useState<VersusResponse | null>(null);
 
   // Cargamos billeteras + inflación real para armar la lista de opciones
   useEffect(() => {
     Promise.all([
-      api.get<Activo[]>('/activos/tasas'),
-      api.get('/activos/inflacion'),
+      api.get<Asset[]>('/assets/rates'),
+      api.get('/assets/inflacion'),
     ])
       .then(([tasas, infl]) => {
         const billeteras = tasas.data
-          .filter((a) => a.tipo === 'Billetera Virtual')
-          .map((a) => a.entidad);
-        setOpciones([...EXTRAS, ...billeteras]);
-        const valor = infl.data?.valor;
-        if (valor && valor > 0) setInflacion(valor);
+          .filter((a) => a.type === 'Billetera Virtual')
+          .map((a) => a.entity);
+        setOptions([...EXTRAS, ...billeteras]);
+        const value = infl.data?.value;
+        if (value && value > 0) setInflation(value);
       })
       .catch(() => {})
-      .finally(() => setCargando(false));
+      .finally(() => setLoading(false));
   }, []);
 
   const calcular = async () => {
     setCalculando(true);
     try {
-      const response = await api.post<VersusResponse>('/mercados/versus', {
-        entidadA: ladoA,
-        entidadB: ladoB,
-        monto,
-        plazoMeses: plazo,
-        inflacionMensual: inflacion,
+      const response = await api.post<VersusResponse>('/markets/versus', {
+        assetA: ladoA,
+        assetB: ladoB,
+        amount,
+        months: term,
+        monthlyInflation: inflation,
       }, { timeout: 60000 });
       setResultado(response.data);
     } catch (e) {
@@ -164,19 +168,19 @@ export default function VersusScreen({ onVolver }: VersusScreenProps) {
   };
 
   useEffect(() => {
-    if (!cargando) calcular();
-  }, [ladoA, ladoB, cargando]);
+    if (!loading) calcular();
+  }, [ladoA, ladoB, loading]);
 
-  if (cargando) {
+  if (loading) {
     return (
       <Screen>
-        <Cargando style={s.loading} />
+        <Loading style={s.loading} />
       </Screen>
     );
   }
 
-  const tonoGanador = (nombre: string): 'success' | 'warning' | 'danger' =>
-    resultado?.ganador === nombre ? 'success' : 'warning';
+  const tonoGanador = (name: string): 'success' | 'warning' | 'danger' =>
+    resultado?.ganador === name ? 'success' : 'warning';
 
   return (
     <Screen>
@@ -184,37 +188,37 @@ export default function VersusScreen({ onVolver }: VersusScreenProps) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: spacing.lg, paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.xxl }}
       >
-        <BotonVolver onPress={onVolver} />
+        <BackButton onPress={onBack} />
 
-        <Header text="Versus" level="title" style={s.titulo} />
-        <Text style={s.subtitulo}>Compará dos inversiones y mirá quién gana</Text>
+        <Header text="Versus" level="title" style={s.title} />
+        <Text style={s.subtitle}>Compará dos inversiones y mirá quién gana</Text>
 
         <View style={s.vsFila}>
           <View style={s.lado}>
-            <SelectorActivo titulo="ACTIVO A" seleccion={ladoA} opciones={opciones} onElegir={setLadoA} />
+            <SelectorAsset title="ACTIVO A" seleccion={ladoA} options={options} onElegir={setLadoA} />
           </View>
           <Text style={s.vs}>VS</Text>
           <View style={s.lado}>
-            <SelectorActivo titulo="ACTIVO B" seleccion={ladoB} opciones={opciones} onElegir={setLadoB} />
+            <SelectorAsset title="ACTIVO B" seleccion={ladoB} options={options} onElegir={setLadoB} />
           </View>
         </View>
 
-        {calculando && <Cargando />}
+        {calculando && <Loading />}
 
         {resultado && !calculando && (
           <>
             <View style={s.ganadorBanner}>
               <Ionicons name="trophy" size={20} color={colors.onBrand} />
-              <Text style={s.ganadorTexto}>Gana: {resultado.ganador}</Text>
+              <Text style={s.ganadorText}>Gana: {resultado.ganador}</Text>
             </View>
 
             <View style={s.vsFila}>
-              <View style={s.lado}><CardResultado titulo="Activo A" r={resultado.activoA} /></View>
-              <View style={s.lado}><CardResultado titulo="Activo B" r={resultado.activoB} /></View>
+              <View style={s.lado}><CardResultado title="Activo A" r={resultado.activoA} /></View>
+              <View style={s.lado}><CardResultado title="Activo B" r={resultado.activoB} /></View>
             </View>
 
             {resultado.probabilidadA != null && (
-              <BarraProgreso
+              <ProgressBar
                 progreso={Math.round(resultado.probabilidadA * 100)}
                 style={s.probBar}
               />
@@ -222,21 +226,21 @@ export default function VersusScreen({ onVolver }: VersusScreenProps) {
 
             {/* Gráfico de ganancia real proyectada: las dos barras lado a lado */}
             <Card style={s.graficoCard}>
-              <Header text="Ganancia real proyectada" level="section" style={s.graficoTitulo} />
+              <Header text="Ganancia real proyectada" level="section" style={s.graficoTitle} />
               {(() => {
-                const ga = resultado.activoA.gananciaReal;
-                const gb = resultado.activoB.gananciaReal;
+                const ga = resultado.activoA.realGain;
+                const gb = resultado.activoB.realGain;
                 const maxAbs = Math.max(Math.abs(ga), Math.abs(gb), 1);
                 const altura = (v: number) => Math.max((Math.abs(v) / maxAbs) * 90, 4);
                 return (
                   <View style={s.graficoFila}>
-                    {[{ nombre: resultado.activoA.entidad, valor: ga }, { nombre: resultado.activoB.entidad, valor: gb }].map((item) => (
-                      <View key={item.nombre} style={s.barraCol}>
-                        <Text style={[s.barraValor, item.valor >= 0 ? s.verde : s.rojo]} numberOfLines={1}>
-                          {item.valor >= 0 ? '+' : ''}{formatPesos(item.valor)}
+                    {[{ name: resultado.activoA.entity, value: ga }, { name: resultado.activoB.entity, value: gb }].map((item) => (
+                      <View key={item.name} style={s.barraCol}>
+                        <Text style={[s.barraValue, item.value >= 0 ? s.green : s.red]} numberOfLines={1}>
+                          {item.value >= 0 ? '+' : ''}{formatPesos(item.value)}
                         </Text>
-                        <View style={[s.barraG, { height: altura(item.valor), backgroundColor: item.valor >= 0 ? colors.systemGreen : colors.systemRed }]} />
-                        <Text style={s.barraNombre} numberOfLines={1}>{item.nombre}</Text>
+                        <View style={[s.barraG, { height: altura(item.value), backgroundColor: item.value >= 0 ? colors.systemGreen : colors.systemRed }]} />
+                        <Text style={s.barraName} numberOfLines={1}>{item.name}</Text>
                       </View>
                     ))}
                   </View>
@@ -245,11 +249,11 @@ export default function VersusScreen({ onVolver }: VersusScreenProps) {
             </Card>
 
             <Card style={s.mensajeCard}>
-              <Text style={s.mensajeTexto}>{resultado.mensaje}</Text>
+              <Text style={s.mensajeText}>{resultado.message}</Text>
             </Card>
 
             <Text style={s.nota}>
-              Monto ${monto.toLocaleString('es-AR')} · Plazo {plazo} meses · Inflación {inflacion}% mensual
+              Monto ${amount.toLocaleString('es-AR')} · Plazo {term} meses · Inflación {inflation}% mensual
             </Text>
           </>
         )}
@@ -261,8 +265,8 @@ export default function VersusScreen({ onVolver }: VersusScreenProps) {
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
     loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    titulo: { marginBottom: spacing.xs },
-    subtitulo: { ...typography.body, color: colors.secondaryLabel, marginBottom: spacing.xl },
+    title: { marginBottom: spacing.xs },
+    subtitle: { ...typography.body, color: colors.secondaryLabel, marginBottom: spacing.xl },
 
     // grid.fila con stretch: las dos tarjetas de resultado miden siempre lo mismo
     vsFila: { ...grid.fila, marginBottom: spacing.lg },
@@ -276,8 +280,8 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       gap: spacing.xs,
     },
     selectorPressed: { opacity: 0.7 },
-    selectorTitulo: { ...typography.caption2, fontWeight: '600', color: colors.tertiaryLabel },
-    selectorValor: { ...typography.subheadline, fontWeight: '600', color: colors.label },
+    selectorTitle: { ...typography.caption2, fontWeight: '600', color: colors.tertiaryLabel },
+    selectorValue: { ...typography.subheadline, fontWeight: '600', color: colors.label },
 
     modalFondo: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
     modalPanel: {
@@ -295,7 +299,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: colors.separator,
     },
-    opcionTexto: { ...typography.body, color: colors.label },
+    opcionText: { ...typography.body, color: colors.label },
 
     ganadorBanner: {
       flexDirection: 'row',
@@ -307,24 +311,24 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       padding: spacing.md,
       marginBottom: spacing.lg,
     },
-    ganadorTexto: { ...typography.headline, fontWeight: '700', color: colors.onBrand },
+    ganadorText: { ...typography.headline, fontWeight: '700', color: colors.onBrand },
 
     resultCard: { padding: spacing.md, flex: 1 },
-    resultTitulo: { ...typography.caption2, fontWeight: '600', color: colors.tertiaryLabel, marginBottom: spacing.xs },
-    resultEntidad: { ...typography.subheadline, fontWeight: '600', color: colors.label },
+    resultTitle: { ...typography.caption2, fontWeight: '600', color: colors.tertiaryLabel, marginBottom: spacing.xs },
+    resultEntity: { ...typography.subheadline, fontWeight: '600', color: colors.label },
     resultReal: { ...typography.title3, fontWeight: '700', marginVertical: spacing.xs },
-    resultDetalle: { ...typography.caption1, color: colors.secondaryLabel, marginTop: 2 },
-    verde: { color: colors.systemGreen },
-    rojo: { color: colors.systemRed },
+    resultDetail: { ...typography.caption1, color: colors.secondaryLabel, marginTop: 2 },
+    green: { color: colors.systemGreen },
+    red: { color: colors.systemRed },
 
     probBar: { marginBottom: spacing.md },
 
     mensajeCard: { padding: spacing.md, marginBottom: spacing.md },
-    mensajeTexto: { ...typography.footnote, color: colors.label, lineHeight: 18 },
+    mensajeText: { ...typography.footnote, color: colors.label, lineHeight: 18 },
     nota: { ...typography.caption2, color: colors.tertiaryLabel, textAlign: 'center' },
 
     graficoCard: { padding: spacing.lg, marginBottom: spacing.lg },
-    graficoTitulo: { marginBottom: spacing.lg },
+    graficoTitle: { marginBottom: spacing.lg },
     graficoFila: {
       flexDirection: 'row',
       justifyContent: 'space-around',
@@ -332,7 +336,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       gap: spacing.xl,
     },
     barraCol: { flex: 1, alignItems: 'center', gap: spacing.xs, justifyContent: 'flex-end' },
-    barraValor: { ...typography.footnote, fontWeight: '700' },
+    barraValue: { ...typography.footnote, fontWeight: '700' },
     barraG: { width: '70%', borderRadius: 6 },
-    barraNombre: { ...typography.caption1, color: colors.secondaryLabel, textAlign: 'center' },
+    barraName: { ...typography.caption1, color: colors.secondaryLabel, textAlign: 'center' },
   });

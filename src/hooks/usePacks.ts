@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from '../lib/api';
-import type { PackCotizacion } from '../domain/mercados';
+import type { PackQuote } from '../domain/markets';
 
 /**
  * Hook que carga los packs de inversión (GET /mercados/packs).
  * El JWT lo adjunta el interceptor de Axios.
  */
 export default function usePacks() {
-  const [packs, setPacks] = useState<PackCotizacion[]>([]);
+  const [packs, setPacks] = useState<PackQuote[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const cargar = useCallback(async () => {
+  const load = useCallback(async () => {
     try {
-      const response = await api.get<PackCotizacion[]>('/mercados/packs');
+      const response = await api.get<PackQuote[]>('/markets/packs');
       setPacks(response.data);
     } catch (e) {
       console.warn('No se pudieron cargar los packs', e);
@@ -22,8 +22,8 @@ export default function usePacks() {
   }, []);
 
   useEffect(() => {
-    cargar();
-  }, [cargar]);
+    load();
+  }, [load]);
 
   return { packs, loading };
 }

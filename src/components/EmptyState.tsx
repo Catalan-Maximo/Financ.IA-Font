@@ -9,16 +9,16 @@ interface EstadoVacioProps {
   /** Ícono Ionicons que acompaña el mensaje. */
   icono: keyof typeof Ionicons.glyphMap;
   /** Frase principal. */
-  titulo: string;
+  title: string;
   /** Texto secundario (qué hacer para salir de este estado). */
-  detalle?: string;
+  detail?: string;
 }
 
 /**
  * Estado vacío uniforme: ícono en círculo, mensaje y detalle opcional.
  * Mismo look en todas las secciones, aunque falte distinta información.
  */
-export default function EstadoVacio({ icono, titulo, detalle }: EstadoVacioProps) {
+export default function EmptyState({ icono, title, detail }: EstadoVacioProps) {
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
@@ -27,8 +27,8 @@ export default function EstadoVacio({ icono, titulo, detalle }: EstadoVacioProps
       <View style={s.circulo}>
         <Ionicons name={icono} size={26} color={colors.tertiaryLabel} />
       </View>
-      <Text style={s.titulo}>{titulo}</Text>
-      {detalle && <Text style={s.detalle}>{detalle}</Text>}
+      <Text style={s.title}>{title}</Text>
+      {detail && <Text style={s.detail}>{detail}</Text>}
     </View>
   );
 }
@@ -45,6 +45,6 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       justifyContent: 'center',
       marginBottom: spacing.sm,
     },
-    titulo: { ...typography.subheadline, fontWeight: '600', color: colors.secondaryLabel, textAlign: 'center' },
-    detalle: { ...typography.caption1, color: colors.tertiaryLabel, textAlign: 'center' },
+    title: { ...typography.subheadline, fontWeight: '600', color: colors.secondaryLabel, textAlign: 'center' },
+    detail: { ...typography.caption1, color: colors.tertiaryLabel, textAlign: 'center' },
   });

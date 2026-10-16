@@ -13,10 +13,14 @@ import { spacing } from '../theme/spacing';
 
 interface LoginScreenProps {
   /** Cambia a la pantalla de registro. */
-  onIrARegistro: () => void;
+  onGoToRegister: () => void;
 }
 
-export default function LoginScreen({ onIrARegistro }: LoginScreenProps) {
+/**
+ * Pantalla de login: email + contraseña. Llama a POST /auth/login
+ * y guarda el token JWT para entrar a la app.
+ */
+export default function LoginScreen({ onGoToRegister }: LoginScreenProps) {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,7 +28,7 @@ export default function LoginScreen({ onIrARegistro }: LoginScreenProps) {
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
-  const enviar = async () => {
+  const send = async () => {
     if (!email.trim() || !password) {
       Alert.alert('Error', 'Completá email y contraseña.');
       return;
@@ -34,10 +38,10 @@ export default function LoginScreen({ onIrARegistro }: LoginScreenProps) {
       await login(email.trim(), password);
       // Éxito: App reacciona al token y pasa al flujo principal
     } catch (error) {
-      const mensaje = axios.isAxiosError(error)
+      const message = axios.isAxiosError(error)
         ? error.response?.data?.message ?? 'Credenciales inválidas.'
         : 'No se pudo conectar con el backend.';
-      Alert.alert('Error', mensaje);
+      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }
@@ -45,8 +49,8 @@ export default function LoginScreen({ onIrARegistro }: LoginScreenProps) {
 
   return (
     <Screen style={s.screen}>
-      <Header text="Financ.IA" level="title" style={s.titulo} />
-      <Text style={s.subtitulo}>Iniciá sesión para continuar</Text>
+      <Header text="Financ.IA" level="title" style={s.title} />
+      <Text style={s.subtitle}>Iniciá sesión para continuar</Text>
 
       <Card style={s.card}>
         <Input
@@ -68,15 +72,15 @@ export default function LoginScreen({ onIrARegistro }: LoginScreenProps) {
           title="Iniciar Sesión"
           icon="log-in-outline"
           haptics
-          onPress={enviar}
+          onPress={send}
           loading={loading}
-          style={s.boton}
+          style={s.button}
         />
       </Card>
 
       <View style={s.footer}>
-        <Text style={s.footerTexto}>¿No tenés cuenta?</Text>
-        <Pressable onPress={onIrARegistro}>
+        <Text style={s.footerText}>¿No tenés cuenta?</Text>
+        <Pressable onPress={onGoToRegister}>
           <Text style={s.footerLink}>Registrate</Text>
         </Pressable>
       </View>
@@ -87,21 +91,21 @@ export default function LoginScreen({ onIrARegistro }: LoginScreenProps) {
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
     screen: { justifyContent: 'center' },
-    titulo: { textAlign: 'center' },
-    subtitulo: {
+    title: { textAlign: 'center' },
+    subtitle: {
       ...typography.body,
       color: colors.secondaryLabel,
       textAlign: 'center',
       marginBottom: spacing.xxl,
     },
     card: { padding: spacing.lg },
-    boton: { marginTop: spacing.xl },
+    button: { marginTop: spacing.xl },
     footer: {
       flexDirection: 'row',
       justifyContent: 'center',
       gap: spacing.sm,
       marginTop: spacing.xl,
     },
-    footerTexto: { ...typography.body, color: colors.secondaryLabel },
+    footerText: { ...typography.body, color: colors.secondaryLabel },
     footerLink: { ...typography.body, color: colors.brand, fontWeight: '600' },
   });

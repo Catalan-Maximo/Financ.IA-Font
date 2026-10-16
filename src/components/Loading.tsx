@@ -5,7 +5,7 @@ import { useTheme } from '../theme/colors';
 /**
  * Spinner uniforme para cargas parciales (dentro de una pantalla).
  */
-export default function Cargando({ style }: { style?: StyleProp<ViewStyle> }) {
+export default function Loading({ style }: { style?: StyleProp<ViewStyle> }) {
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 

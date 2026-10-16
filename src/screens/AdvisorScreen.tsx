@@ -17,18 +17,18 @@ import Button from '../components/Button';
 import Input from '../components/Input';
 import Badge from '../components/Badge';
 import Screen from '../components/Screen';
-import Cargando from '../components/Cargando';
-import Entrada from '../components/Entrada';
+import Loading from '../components/Loading';
+import FadeIn from '../components/FadeIn';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
-import useAsesorIA from '../hooks/useAsesorIA';
-import useCripto from '../hooks/useCripto';
-import type { Asignacion } from '../domain/ia';
+import useAdvisor from '../hooks/useAdvisor';
+import useCrypto from '../hooks/useCrypto';
+import type { Allocation } from '../domain/ia';
 import { useTheme, type ThemeColors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 
 interface AsesorVirtualProps {
-  perfil: string;
+  profile: string;
 }
 
 /** Tono del badge según nivel de riesgo. */
@@ -46,7 +46,7 @@ const CRIPTO_TONE: Record<string, 'success' | 'warning' | 'danger'> = {
 };
 
 /** Barra de distribución con ancho animado (stagger por índice). */
-function BarraDistribucion({ porcentaje, index }: { porcentaje: number; index: number }) {
+function BarraDistribucion({ percentage, index }: { percentage: number; index: number }) {
   const { colors } = useTheme();
   const s = useMemo(() => makeBarStyles(colors), [colors]);
 
@@ -57,14 +57,14 @@ function BarraDistribucion({ porcentaje, index }: { porcentaje: number; index: n
     if (trackWidth > 0) {
       width.setValue(0);
       Animated.timing(width, {
-        toValue: (porcentaje / 100) * trackWidth,
+        toValue: (percentage / 100) * trackWidth,
         duration: 600,
         easing: Easing.out(Easing.cubic),
         delay: index * 80,
         useNativeDriver: false,
       }).start();
     }
-  }, [index, porcentaje, trackWidth, width]);
+  }, [index, percentage, trackWidth, width]);
 
   return (
     <View style={s.track} onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}>
@@ -89,18 +89,22 @@ const makeBarStyles = (colors: ThemeColors) =>
     },
   });
 
-export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
+/**
+ * Simulador de inversión: proyecta una inversión según el perfil
+ * del usuario (Monte Carlo) y compara los packs de inversión.
+ */
+export default function AdvisorScreen({ profile }: AsesorVirtualProps) {
   const {
-    monto, setMonto,
-    plazo, setPlazo,
-    inflacion, setInflacion,
+    amount, setAmount,
+    term, setTerm,
+    inflation, setInflation,
     loading,
-    respuesta,
-    error, limpiarError,
-    consultar,
-  } = useAsesorIA(perfil);
+    response,
+    error, clearError,
+    consult,
+  } = useAdvisor(profile);
 
-  const { cripto } = useCripto();
+  const { crypto } = useCrypto();
 
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -111,41 +115,41 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
 
   useEffect(() => {
     if (error) {
-      Alert.alert('Error', error, [{ text: 'OK', onPress: limpiarError }]);
+      Alert.alert('Error', error, [{ text: 'OK', onPress: clearError }]);
     }
-  }, [error, limpiarError]);
+  }, [error, clearError]);
 
   // Haptic de éxito cuando llega la respuesta del asesor
   useEffect(() => {
-    if (respuesta) {
+    if (response) {
       setRespuestaKey((k) => k + 1);
       if (Platform.OS !== 'web') {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
     }
-  }, [respuesta]);
+  }, [response]);
 
-  const formatPesos = (valor: number) =>
-    `$${valor.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formatPesos = (value: number) =>
+    `$${value.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const ejecutarConsulta = () => {
     if (Platform.OS !== 'web') {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
-    consultar();
+    consult();
   };
 
-  const renderAsignacion = (asignacion: Asignacion, index: number) => (
+  const renderAllocation = (asignacion: Allocation, index: number) => (
     <Card
       key={index}
       style={s.asignacionCard}
     >
       <View style={s.asignacionHeader}>
-        <Text style={s.asignacionTipo}>{asignacion.tipoActivo}</Text>
-        <Text style={s.asignacionPorcentaje}>{asignacion.porcentaje}%</Text>
+        <Text style={s.asignacionType}>{asignacion.assetType}</Text>
+        <Text style={s.asignacionPercentage}>{asignacion.percentage}%</Text>
       </View>
-      <BarraDistribucion porcentaje={asignacion.porcentaje} index={index} />
-      <Text style={s.asignacionMotivo}>{asignacion.motivo}</Text>
+      <BarraDistribucion percentage={asignacion.percentage} index={index} />
+      <Text style={s.asignacionReason}>{asignacion.reason}</Text>
     </Card>
   );
 
@@ -166,22 +170,22 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
         <Card style={s.formCard}>
           <Input
             label="Monto a invertir ($)"
-            value={monto}
-            onChangeText={setMonto}
+            value={amount}
+            onChangeText={setAmount}
             keyboardType="numeric"
             placeholder="100000"
           />
           <Input
             label="Plazo (meses)"
-            value={plazo}
-            onChangeText={setPlazo}
+            value={term}
+            onChangeText={setTerm}
             keyboardType="numeric"
             placeholder="6"
           />
           <Input
             label="Inflación mensual estimada (%)"
-            value={inflacion}
-            onChangeText={setInflacion}
+            value={inflation}
+            onChangeText={setInflation}
             keyboardType="numeric"
             placeholder="4.0"
           />
@@ -197,28 +201,28 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
         </Card>
 
         {/* ── Resultados ─── */}
-        {loading && <Cargando style={s.loadingContainer} />}
+        {loading && <Loading style={s.loadingContainer} />}
 
-        {respuesta && !loading && (
-          <Entrada key={respuestaKey} style={s.resultados}>
+        {response && !loading && (
+          <FadeIn key={respuestaKey} style={s.resultados}>
             {/* Insignia de riesgo y recomendación */}
             <Card style={s.riesgoCard}>
               <Badge
-                label={`Riesgo: ${respuesta.nivelRiesgo}`}
-                tone={RIESGO_TONE[respuesta.nivelRiesgo] ?? 'warning'}
+                label={`Riesgo: ${response.riskLevel}`}
+                tone={RIESGO_TONE[response.riskLevel] ?? 'warning'}
                 style={s.riesgoBadge}
               />
 
-              <Text style={s.recomendacionTexto}>{respuesta.recomendacion}</Text>
+              <Text style={s.recomendacionText}>{response.recommendation}</Text>
 
               {/* Veredicto cripto del día (análisis técnico) */}
-              {cripto.length > 0 && (
+              {crypto.length > 0 && (
                 <View style={s.criptoFila}>
-                  {cripto.map((c) => (
+                  {crypto.map((c) => (
                     <Badge
-                      key={c.simbolo}
-                      label={`${c.simbolo.replace('USDT', '')}: ${c.veredicto}`}
-                      tone={CRIPTO_TONE[c.veredicto] ?? 'warning'}
+                      key={c.symbol}
+                      label={`${c.symbol.replace('USDT', '')}: ${c.verdict}`}
+                      tone={CRIPTO_TONE[c.verdict] ?? 'warning'}
                     />
                   ))}
                 </View>
@@ -229,36 +233,36 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
                 <Text style={s.label}>Ganancia real estimada</Text>
                 <Text
                   style={[
-                    s.gananciaTexto,
-                    respuesta.gananciaRealEstimada > 0 ? s.green : s.red,
+                    s.gananciaText,
+                    response.estimatedRealGain > 0 ? s.green : s.red,
                   ]}
                 >
-                  {formatPesos(respuesta.gananciaRealEstimada)}
+                  {formatPesos(response.estimatedRealGain)}
                 </Text>
               </View>
             </Card>
 
             {/* Distribución sugerida */}
             <Header text="Distribución Sugerida" level="section" style={s.resultHeader} />
-            {respuesta.distribucionSugerida.map(renderAsignacion)}
+            {response.suggestedAllocation.map(renderAllocation)}
 
             {/* Rendimientos por activo (la lista completa del simulador) */}
             <Header text="Rendimientos por Activo" level="section" style={s.resultHeader} />
-            <Card style={s.rendimientosCard}>
-              {respuesta.rendimientos.map((r, i) => (
-                <View key={`${r.entidad}-${i}`} style={[s.rendFila, i > 0 && s.rendBorde]}>
+            <Card style={s.performancesCard}>
+              {response.performances.map((r, i) => (
+                <View key={`${r.entity}-${i}`} style={[s.rendFila, i > 0 && s.rendBorde]}>
                   <View style={s.rendIzq}>
-                    <Text style={s.rendEntidad} numberOfLines={1}>{r.entidad}</Text>
-                    <Text style={s.rendTipo}>{r.tipo} · Riesgo {r.riesgo}</Text>
+                    <Text style={s.rendEntity} numberOfLines={1}>{r.entity}</Text>
+                    <Text style={s.rendType}>{r.type} · Riesgo {r.risk}</Text>
                   </View>
                   <View style={s.rendDer}>
-                    <Text style={[s.rendReal, r.leGanaALaInflacion ? s.green : s.red]} numberOfLines={1}>
-                      {r.tasaRealMensual > 0 ? '+' : ''}{r.tasaRealMensual}% real
+                    <Text style={[s.rendReal, r.beatsInflation ? s.green : s.red]} numberOfLines={1}>
+                      {r.realMonthlyRate > 0 ? '+' : ''}{r.realMonthlyRate}% real
                     </Text>
                     {/* Línea fija siempre (— en renta fija): todas las filas miden lo mismo */}
                     <Text style={s.rendRango}>
-                      {r.peorEscenario != null && r.mejorEscenario != null
-                        ? `${r.peorEscenario.toFixed(0)}% a +${r.mejorEscenario.toFixed(0)}%`
+                      {r.worstCase != null && r.bestCase != null
+                        ? `${r.worstCase.toFixed(0)}% a +${r.bestCase.toFixed(0)}%`
                         : '—'}
                     </Text>
                   </View>
@@ -268,10 +272,10 @@ export default function AsesorVirtualScreen({ perfil }: AsesorVirtualProps) {
 
             {/* Resumen de estrategia */}
             <Card style={s.resumenCard}>
-              <Header text="Resumen de Estrategia" level="section" style={s.resumenTitulo} />
-              <Text style={s.resumenTexto}>{respuesta.resumenEstrategia}</Text>
+              <Header text="Resumen de Estrategia" level="section" style={s.resumenTitle} />
+              <Text style={s.resumenText}>{response.strategySummary}</Text>
             </Card>
-          </Entrada>
+          </FadeIn>
         )}
       </ScrollView>
     </Screen>
@@ -296,7 +300,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
 
     riesgoCard: { marginBottom: spacing.xl },
     riesgoBadge: { alignSelf: 'flex-start', marginBottom: spacing.lg },
-    recomendacionTexto: { ...typography.callout, color: colors.label },
+    recomendacionText: { ...typography.callout, color: colors.label },
     criptoFila: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg, flexWrap: 'wrap' },
 
     separator: {
@@ -307,7 +311,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
 
     row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     label: { ...typography.footnote, color: colors.secondaryLabel },
-    gananciaTexto: { ...typography.callout, fontWeight: '700' },
+    gananciaText: { ...typography.callout, fontWeight: '700' },
     green: { color: colors.systemGreen },
     red: { color: colors.systemRed },
 
@@ -315,7 +319,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     resultHeader: { marginBottom: spacing.lg },
     asignacionCard: { marginBottom: spacing.md },
 
-    rendimientosCard: { padding: 0, marginBottom: spacing.lg },
+    performancesCard: { padding: 0, marginBottom: spacing.lg },
     rendFila: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -329,18 +333,18 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       borderTopColor: colors.separator,
     },
     rendIzq: { flex: 1 },
-    rendEntidad: { ...typography.subheadline, fontWeight: '600', color: colors.label },
-    rendTipo: { ...typography.caption2, color: colors.tertiaryLabel },
+    rendEntity: { ...typography.subheadline, fontWeight: '600', color: colors.label },
+    rendType: { ...typography.caption2, color: colors.tertiaryLabel },
     rendDer: { alignItems: 'flex-end' },
     rendReal: { ...typography.subheadline, fontWeight: '700' },
     rendRango: { ...typography.caption2, color: colors.tertiaryLabel },
     asignacionHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md },
-    asignacionTipo: { ...typography.subheadline, fontWeight: '600', color: colors.label },
-    asignacionPorcentaje: { ...typography.callout, fontWeight: '700', color: colors.brand },
-    asignacionMotivo: { ...typography.footnote, color: colors.secondaryLabel },
+    asignacionType: { ...typography.subheadline, fontWeight: '600', color: colors.label },
+    asignacionPercentage: { ...typography.callout, fontWeight: '700', color: colors.brand },
+    asignacionReason: { ...typography.footnote, color: colors.secondaryLabel },
 
     /* ── Resumen ─── */
     resumenCard: { marginTop: spacing.sm },
-    resumenTitulo: { marginBottom: spacing.md },
-    resumenTexto: { ...typography.footnote, color: colors.secondaryLabel },
+    resumenTitle: { marginBottom: spacing.md },
+    resumenText: { ...typography.footnote, color: colors.secondaryLabel },
   });

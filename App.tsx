@@ -1,208 +1,213 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import TestPerfilScreen from './src/screens/TestPerfilScreen';
+import ProfileTestScreen from './src/screens/ProfileTestScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
-import AsesorVirtualScreen from './src/screens/AsesorVirtualScreen';
+import AdvisorScreen from './src/screens/AdvisorScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
-import CriptoDetalleScreen from './src/screens/CriptoDetalleScreen';
-import MercadosScreen from './src/screens/MercadosScreen';
+import CryptoDetailScreen from './src/screens/CryptoDetailScreen';
+import MarketsScreen from './src/screens/MarketsScreen';
 import ChatScreen from './src/screens/ChatScreen';
 import PackDetailScreen from './src/screens/PackDetailScreen';
 import VersusScreen from './src/screens/VersusScreen';
-import ActivoDetalleScreen from './src/screens/ActivoDetalleScreen';
-import AccionDetalleScreen from './src/screens/AccionDetalleScreen';
-import CriptoInfoScreen from './src/screens/CriptoInfoScreen';
-import NoticiasScreen from './src/screens/NoticiasScreen';
-import MiDineroScreen from './src/screens/MiDineroScreen';
+import AssetDetailScreen from './src/screens/AssetDetailScreen';
+import StockDetailScreen from './src/screens/StockDetailScreen';
+import CryptoInfoScreen from './src/screens/CryptoInfoScreen';
+import NewsScreen from './src/screens/NewsScreen';
+import MyMoneyScreen from './src/screens/MyMoneyScreen';
 import BottomNav, { TabKey } from './src/components/BottomNav';
-import Entrada from './src/components/Entrada';
-import PanelPerfil from './src/components/PanelPerfil';
+import FadeIn from './src/components/FadeIn';
+import PanelProfile from './src/components/ProfilePanel';
 import FaqSheet from './src/components/FaqSheet';
 import TopBar from './src/components/TopBar';
-import usePerfilGuardado from './src/hooks/usePerfilGuardado';
+import useSavedProfile from './src/hooks/useSavedProfile';
 import { useAuth } from './src/hooks/AuthContext';
-import { borrarPerfil } from './src/lib/storage';
-import { registrarNotificaciones } from './src/lib/notificaciones';
+import { removeProfile } from './src/lib/storage';
+import { registerNotifications } from './src/lib/notificaciones';
 import { useTheme } from './src/theme/colors';
-import type { CriptoEstado, CriptoInfo } from './src/domain/cripto';
-import type { PackCotizacion, AccionCotizacion } from './src/domain/mercados';
-import type { Activo } from './src/domain/activo';
+import type { CryptoState, CryptoInfo } from './src/domain/crypto';
+import type { PackQuote, StockQuote } from './src/domain/markets';
+import type { Asset } from './src/domain/asset';
 
+/**
+ * Cerebro de la app: decide qué pantalla se muestra en cada momento
+ * (login → test del inversor → pestañas principales) y maneja la
+ * navegación entre pestañas y pantallas de detalle.
+ */
 export default function App() {
-  const [perfilUsuario, setPerfilUsuario] = useState<string>('Moderado');
-  const [testCompletado, setTestCompletado] = useState(false);
+  const [userProfile, setUserProfile] = useState<string>('Moderado');
+  const [testCompleted, setTestCompleted] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
-  const [panelAbierto, setPanelAbierto] = useState(false);
-  const [faqAbierto, setFaqAbierto] = useState(false);
-  const [modoAuth, setModoAuth] = useState<'login' | 'register'>('login');
-  const [criptoDetalle, setCriptoDetalle] = useState<CriptoEstado | null>(null);
-  const [packDetalle, setPackDetalle] = useState<PackCotizacion | null>(null);
-  const [versusAbierto, setVersusAbierto] = useState(false);
-  const [activoDetalle, setActivoDetalle] = useState<Activo | null>(null);
-  const [accionDetalle, setAccionDetalle] = useState<AccionCotizacion | null>(null);
-  const [criptoInfo, setCriptoInfo] = useState<CriptoInfo | null>(null);
-  const [noticiasAbierto, setNoticiasAbierto] = useState(false);
-  const { token, email, perfilInversor, cargando: cargandoAuth, logout } = useAuth();
-  const { perfilGuardado, cargando: cargandoPerfil } = usePerfilGuardado();
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [faqOpen, setFaqOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [cryptoDetail, setCryptoDetail] = useState<CryptoState | null>(null);
+  const [packDetail, setPackDetail] = useState<PackQuote | null>(null);
+  const [versusOpen, setVersusOpen] = useState(false);
+  const [assetDetail, setAssetDetail] = useState<Asset | null>(null);
+  const [stockDetail, setStockDetail] = useState<StockQuote | null>(null);
+  const [cryptoInfo, setCryptoInfo] = useState<CryptoInfo | null>(null);
+  const [newsOpen, setNewsOpen] = useState(false);
+  const { token, email, investorProfile, loading: authLoading, logout } = useAuth();
+  const { savedProfile, loading: profileLoading } = useSavedProfile();
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
-  const manejarTestCompleto = (perfilAsignado: string) => {
-    setPerfilUsuario(perfilAsignado);
-    setTestCompletado(true); // A partir de acá, mostramos las pestañas
+  const handleTestComplete = (perfilAsignado: string) => {
+    setUserProfile(perfilAsignado);
+    setTestCompleted(true); // A partir de acá, mostramos las pestañas
   };
 
   // Vuelve al onboarding para rehacer el test del inversor
-  const rehacerTest = async () => {
-    await borrarPerfil();
-    setPanelAbierto(false);
+  const redoTest = async () => {
+    await removeProfile();
+    setPanelOpen(false);
     setActiveTab('dashboard');
-    setTestCompletado(false);
+    setTestCompleted(false);
   };
 
   // Cierra sesión: borra token y perfil, vuelve al login
-  const cerrarSesion = async () => {
+  const signOut = async () => {
     await logout();
-    await borrarPerfil();
-    setPanelAbierto(false);
+    await removeProfile();
+    setPanelOpen(false);
     setActiveTab('dashboard');
-    setTestCompletado(false);
-    setPerfilUsuario('Moderado');
+    setTestCompleted(false);
+    setUserProfile('Moderado');
   };
 
   // Si hay un perfil guardado de una sesión anterior, saltamos el test
   useEffect(() => {
-    if (perfilGuardado) {
-      setPerfilUsuario(perfilGuardado);
-      setTestCompletado(true);
+    if (savedProfile) {
+      setUserProfile(savedProfile);
+      setTestCompleted(true);
     }
-  }, [perfilGuardado]);
+  }, [savedProfile]);
 
   // Si el usuario logueado ya tiene perfil en el backend (vino en el login),
   // saltamos el test — así no hay que rehacerlo en cada login
   useEffect(() => {
-    if (perfilInversor) {
-      setPerfilUsuario(perfilInversor);
-      setTestCompletado(true);
+    if (investorProfile) {
+      setUserProfile(investorProfile);
+      setTestCompleted(true);
     }
-  }, [perfilInversor]);
+  }, [investorProfile]);
 
   // Registrar notificaciones push una vez logueado
   useEffect(() => {
     if (token) {
-      registrarNotificaciones();
+      registerNotifications();
     }
   }, [token]);
 
-  const renderPantalla = () => {
+  const renderScreen = () => {
     switch (activeTab) {
       case 'mercados':
         return (
-          <MercadosScreen
-            onAbrirPack={setPackDetalle}
-            onAbrirDetalleCripto={setCriptoDetalle}
-            onAbrirVersus={() => setVersusAbierto(true)}
-            onAbrirAccion={setAccionDetalle}
-            onAbrirCriptoInfo={setCriptoInfo}
+          <MarketsScreen
+            onOpenPack={setPackDetail}
+            onOpenCryptoDetail={setCryptoDetail}
+            onOpenVersus={() => setVersusOpen(true)}
+            onOpenStock={setStockDetail}
+            onOpenCryptoInfo={setCryptoInfo}
           />
         );
       case 'midinero':
-        return <MiDineroScreen />;
+        return <MyMoneyScreen />;
       case 'chat':
         return <ChatScreen />;
       case 'simulador':
-        return <AsesorVirtualScreen perfil={perfilUsuario} />;
+        return <AdvisorScreen profile={userProfile} />;
       default:
         return (
           <DashboardScreen
-            perfil={perfilUsuario}
-            onIrAlSimulador={() => setActiveTab('simulador')}
-            onAbrirDetalleCripto={setCriptoDetalle}
-            onAbrirPack={setPackDetalle}
-            onAbrirDetalleActivo={setActivoDetalle}
+            profile={userProfile}
+            onGoToSimulator={() => setActiveTab('simulador')}
+            onOpenCryptoDetail={setCryptoDetail}
+            onOpenPack={setPackDetail}
+            onOpenAssetDetail={setAssetDetail}
           />
         );
     }
   };
 
   // Detalle de cripto: pantalla completa encima del flujo con pestañas
-  if (criptoDetalle) {
+  if (cryptoDetail) {
     return (
       <SafeAreaProvider>
         <StatusBar style="auto" />
-        <CriptoDetalleScreen estado={criptoDetalle} onVolver={() => setCriptoDetalle(null)} />
+        <CryptoDetailScreen state={cryptoDetail} onBack={() => setCryptoDetail(null)} />
       </SafeAreaProvider>
     );
   }
 
   // Noticias financieras
-  if (noticiasAbierto) {
+  if (newsOpen) {
     return (
       <SafeAreaProvider>
         <StatusBar style="auto" />
-        <NoticiasScreen onVolver={() => setNoticiasAbierto(false)} />
+        <NewsScreen onBack={() => setNewsOpen(false)} />
       </SafeAreaProvider>
     );
   }
 
   // VERSUS: comparación cara a cara
-  if (versusAbierto) {
+  if (versusOpen) {
     return (
       <SafeAreaProvider>
         <StatusBar style="auto" />
-        <VersusScreen onVolver={() => setVersusAbierto(false)} />
+        <VersusScreen onBack={() => setVersusOpen(false)} />
       </SafeAreaProvider>
     );
   }
 
   // Detalle informativo de una cripto extra
-  if (criptoInfo) {
+  if (cryptoInfo) {
     return (
       <SafeAreaProvider>
         <StatusBar style="auto" />
-        <CriptoInfoScreen info={criptoInfo} onVolver={() => setCriptoInfo(null)} />
+        <CryptoInfoScreen info={cryptoInfo} onBack={() => setCryptoInfo(null)} />
       </SafeAreaProvider>
     );
   }
 
   // Detalle de una acción (precio, gráfico y fundamentales)
-  if (accionDetalle) {
+  if (stockDetail) {
     return (
       <SafeAreaProvider>
         <StatusBar style="auto" />
-        <AccionDetalleScreen cotizacion={accionDetalle} onVolver={() => setAccionDetalle(null)} />
+        <StockDetailScreen quote={stockDetail} onBack={() => setStockDetail(null)} />
       </SafeAreaProvider>
     );
   }
 
   // Detalle de un activo de renta fija (tendencia de 30 días)
-  if (activoDetalle) {
+  if (assetDetail) {
     return (
       <SafeAreaProvider>
         <StatusBar style="auto" />
-        <ActivoDetalleScreen activo={activoDetalle} onVolver={() => setActivoDetalle(null)} />
+        <AssetDetailScreen asset={assetDetail} onBack={() => setAssetDetail(null)} />
       </SafeAreaProvider>
     );
   }
 
   // Detalle de pack: composición y acceso al simulador
-  if (packDetalle) {
+  if (packDetail) {
     return (
       <SafeAreaProvider>
         <StatusBar style="auto" />
         <PackDetailScreen
-          pack={packDetalle}
-          onVolver={() => setPackDetalle(null)}
+          pack={packDetail}
+          onBack={() => setPackDetail(null)}
         />
       </SafeAreaProvider>
     );
   }
 
   // Splash de arranque mientras leemos el storage (token + perfil)
-  if (cargandoAuth || cargandoPerfil) {
+  if (authLoading || profileLoading) {
     return (
       <SafeAreaProvider>
         <StatusBar style="auto" />
@@ -218,10 +223,10 @@ export default function App() {
     return (
       <SafeAreaProvider>
         <StatusBar style="auto" />
-        {modoAuth === 'login' ? (
-          <LoginScreen onIrARegistro={() => setModoAuth('register')} />
+        {authMode === 'login' ? (
+          <LoginScreen onGoToRegister={() => setAuthMode('register')} />
         ) : (
-          <RegisterScreen onIrALogin={() => setModoAuth('login')} />
+          <RegisterScreen onGoToLogin={() => setAuthMode('login')} />
         )}
       </SafeAreaProvider>
     );
@@ -229,11 +234,11 @@ export default function App() {
 
   // El test es onboarding: pantalla única, sin pestañas.
   // Las pestañas aparecen recién cuando el usuario completa el test.
-  if (!testCompletado) {
+  if (!testCompleted) {
     return (
       <SafeAreaProvider>
         <StatusBar style="auto" />
-        <TestPerfilScreen onTestComplete={manejarTestCompleto} />
+        <ProfileTestScreen onTestComplete={handleTestComplete} />
       </SafeAreaProvider>
     );
   }
@@ -243,26 +248,26 @@ export default function App() {
       <StatusBar style="auto" />
       <View style={s.container}>
         <TopBar
-          onAbrirPanel={() => setPanelAbierto(true)}
-          onAbrirFaq={() => setFaqAbierto(true)}
+          onOpenPanel={() => setPanelOpen(true)}
+          onOpenFaq={() => setFaqOpen(true)}
         />
-        <Entrada key={activeTab} style={s.contenido}>
-          {renderPantalla()}
-        </Entrada>
+        <FadeIn key={activeTab} style={s.content}>
+          {renderScreen()}
+        </FadeIn>
         <BottomNav activeTab={activeTab} onChange={setActiveTab} />
-        <PanelPerfil
-          visible={panelAbierto}
-          perfil={perfilUsuario}
+        <PanelProfile
+          visible={panelOpen}
+          profile={userProfile}
           email={email ?? ''}
-          onClose={() => setPanelAbierto(false)}
-          onNavegar={setActiveTab}
-          onAbrirFaq={() => setFaqAbierto(true)}
-          onAbrirVersus={() => setVersusAbierto(true)}
-          onAbrirNoticias={() => setNoticiasAbierto(true)}
-          onRehacerTest={rehacerTest}
-          onLogout={cerrarSesion}
+          onClose={() => setPanelOpen(false)}
+          onNavigate={setActiveTab}
+          onOpenFaq={() => setFaqOpen(true)}
+          onOpenVersus={() => setVersusOpen(true)}
+          onOpenNews={() => setNewsOpen(true)}
+          onRedoTest={redoTest}
+          onLogout={signOut}
         />
-        <FaqSheet visible={faqAbierto} onClose={() => setFaqAbierto(false)} />
+        <FaqSheet visible={faqOpen} onClose={() => setFaqOpen(false)} />
       </View>
     </SafeAreaProvider>
   );
@@ -271,6 +276,6 @@ export default function App() {
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.systemBackground },
-    contenido: { flex: 1 },
+    content: { flex: 1 },
     splash: { flex: 1, backgroundColor: colors.systemBackground, alignItems: 'center', justifyContent: 'center' },
   });

@@ -32,8 +32,8 @@ const SUGERENCIAS = [
  * responde con los datos reales de la app (tasas, dólar, cripto, packs).
  */
 export default function ChatScreen() {
-  const { mensajes, enviando, enviar, limpiar } = useChat();
-  const [texto, setTexto] = useState('');
+  const { messages, sending, send, clear } = useChat();
+  const [text, setText] = useState('');
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const s = useMemo(() => makeStyles(colors), [colors]);
@@ -42,14 +42,14 @@ export default function ChatScreen() {
 
   useEffect(() => {
     scrollRef.current?.scrollToEnd({ animated: true });
-  }, [mensajes, enviando]);
+  }, [messages, sending]);
 
-  const hayMensajes = mensajes.length > 0;
+  const hasMessages = messages.length > 0;
 
   const mandar = () => {
-    const t = texto;
-    setTexto('');
-    enviar(t);
+    const t = text;
+    setText('');
+    send(t);
   };
 
   return (
@@ -59,7 +59,7 @@ export default function ChatScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={insets.bottom}
       >
-        <Header text="Chat de Dudas" level="title" style={s.titulo} />
+        <Header text="Chat de Dudas" level="title" style={s.title} />
 
         <ScrollView
           ref={scrollRef}
@@ -69,61 +69,61 @@ export default function ChatScreen() {
           }}
         >
           {/* Sugerencias (solo antes del primer mensaje) */}
-          {!hayMensajes && (
+          {!hasMessages && (
             <>
-              <Text style={s.subtitulo}>
-                Preguntame lo que quieras sobre la app, tasas, dólar, cripto o inflación:
+              <Text style={s.subtitle}>
+                Preguntame lo que quieras sobre la app, tasas, dólar, crypto o inflación:
               </Text>
               {SUGERENCIAS.map((pregunta) => (
                 <Pressable
                   key={pregunta}
                   style={({ pressed }) => [s.chip, pressed && s.chipPressed]}
-                  onPress={() => enviar(pregunta)}
+                  onPress={() => send(pregunta)}
                 >
-                  <Text style={s.chipTexto}>{pregunta}</Text>
+                  <Text style={s.chipText}>{pregunta}</Text>
                 </Pressable>
               ))}
             </>
           )}
 
           {/* Burbujas */}
-          {mensajes.map((m, i) => (
+          {messages.map((m, i) => (
             <View
               key={i}
-              style={[s.burbuja, m.rol === 'user' ? s.burbujaUser : s.burbujaBot]}
+              style={[s.bubble, m.role === 'user' ? s.userBubble : s.botBubble]}
             >
-              <Text style={m.rol === 'user' ? s.textoUser : s.textoBot}>{m.contenido}</Text>
+              <Text style={m.role === 'user' ? s.userText : s.botText}>{m.content}</Text>
             </View>
           ))}
 
-          {enviando && (
-            <View style={[s.burbuja, s.burbujaBot]}>
-              <Text style={s.textoBot}>Escribiendo…</Text>
+          {sending && (
+            <View style={[s.bubble, s.botBubble]}>
+              <Text style={s.botText}>Escribiendo…</Text>
             </View>
           )}
         </ScrollView>
 
         {/* Barra de entrada (reserva espacio para la tab bar inferior) */}
         <View style={[s.barra, { paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.sm }]}>
-          {hayMensajes && (
-            <Pressable onPress={limpiar} hitSlop={8} style={s.limpiarBtn}>
+          {hasMessages && (
+            <Pressable onPress={clear} hitSlop={8} style={s.limpiarBtn}>
               <Ionicons name="trash-outline" size={20} color={colors.tertiaryLabel} />
             </Pressable>
           )}
           <TextInput
             style={s.input}
-            value={texto}
-            onChangeText={setTexto}
+            value={text}
+            onChangeText={setText}
             placeholder="Escribí tu duda…"
             placeholderTextColor={colors.tertiaryLabel}
             onSubmitEditing={mandar}
             returnKeyType="send"
-            editable={!enviando}
+            editable={!sending}
           />
           <Pressable
             onPress={mandar}
-            disabled={enviando || !texto.trim()}
-            style={[s.enviarBtn, (enviando || !texto.trim()) && s.enviarBtnOff]}
+            disabled={sending || !text.trim()}
+            style={[s.enviarBtn, (sending || !text.trim()) && s.enviarBtnOff]}
           >
             <Ionicons name="arrow-up" size={20} color="#FFFFFF" />
           </Pressable>
@@ -136,8 +136,8 @@ export default function ChatScreen() {
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
     flex: { flex: 1 },
-    titulo: { marginTop: spacing.lg, marginBottom: spacing.lg },
-    subtitulo: { ...typography.callout, color: colors.secondaryLabel, marginBottom: spacing.md },
+    title: { marginTop: spacing.lg, marginBottom: spacing.lg },
+    subtitle: { ...typography.callout, color: colors.secondaryLabel, marginBottom: spacing.md },
 
     chip: {
       alignSelf: 'flex-start',
@@ -148,25 +148,25 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       marginBottom: spacing.sm,
     },
     chipPressed: { opacity: 0.7 },
-    chipTexto: { ...typography.subheadline, color: colors.label },
+    chipText: { ...typography.subheadline, color: colors.label },
 
-    burbuja: {
+    bubble: {
       maxWidth: '82%',
       borderRadius: radius.lg,
       paddingVertical: spacing.sm,
       paddingHorizontal: spacing.md,
       marginBottom: spacing.sm,
     },
-    burbujaUser: {
+    userBubble: {
       alignSelf: 'flex-end',
       backgroundColor: colors.brand,
     },
-    burbujaBot: {
+    botBubble: {
       alignSelf: 'flex-start',
       backgroundColor: colors.secondarySystemBackground,
     },
-    textoUser: { ...typography.body, color: colors.onBrand },
-    textoBot: { ...typography.body, color: colors.label },
+    userText: { ...typography.body, color: colors.onBrand },
+    botText: { ...typography.body, color: colors.label },
 
     barra: {
       flexDirection: 'row',

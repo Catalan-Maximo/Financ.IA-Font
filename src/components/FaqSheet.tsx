@@ -19,59 +19,59 @@ import { spacing } from '../theme/spacing';
 import { radius } from '../theme/radius';
 
 /** Preguntas frecuentes de la app. */
-const PREGUNTAS = [
+const QUESTIONS = [
   {
     pregunta: '¿Cómo se calcula mi perfil de inversor?',
-    respuesta:
+    response:
       'Completás un test breve de 6 preguntas y, según tus respuestas, te clasificamos como Conservador, Moderado o Agresivo.',
   },
   {
     pregunta: '¿Qué es la TNA?',
-    respuesta:
+    response:
       'La Tasa Nominal Anual es el interés anual que paga un instrumento antes de ajustar por inflación.',
   },
   {
     pregunta: '¿Qué significa "rendimiento real"?',
-    respuesta:
+    response:
       'Es la ganancia descontando la inflación: si el número es positivo, tu plata está ganando poder de compra.',
   },
   {
     pregunta: '¿Cómo uso el simulador?',
-    respuesta:
+    response:
       'Ingresá monto, plazo e inflación estimada: comparamos los instrumentos del mercado y te marcamos la mejor opción.',
   },
   {
     pregunta: '¿Cómo rehago el test del inversor?',
-    respuesta: 'Abrí el menú (ícono de tres rayas, arriba a la izquierda) y tocá "Rehacer test del inversor".',
+    response: 'Abrí el menú (ícono de tres rayas, arriba a la izquierda) y tocá "Rehacer test del inversor".',
   },
   {
     pregunta: '¿Qué significan BUY, WATCH y AVOID en cripto?',
-    respuesta:
+    response:
       'Es el veredicto de nuestro análisis técnico diario: BUY = la mayoría de las señales dan para comprar, WATCH = esperar y observar, AVOID = mejor mantenerse afuera. Nunca es una garantía: la cripto es muy volátil.',
   },
   {
     pregunta: '¿Qué es el RSI?',
-    respuesta:
+    response:
       'Es un indicador de 0 a 100 que mide si un activo está "sobrecomprado" (por encima de 70, puede venir una corrección) o "sobrevendido" (por debajo de 30, posible rebote). Entre 30 y 70 se considera zona neutral.',
   },
   {
     pregunta: '¿Qué son el soporte y la resistencia?',
-    respuesta:
+    response:
       'El soporte es el precio mínimo de los últimos 20 días (donde suele frenarse una caída) y la resistencia el máximo (donde suele frenarse una suba). Comprar cerca del soporte suele ser un mejor momento de entrada.',
   },
   {
     pregunta: '¿Qué es la tendencia SMA50/SMA200?',
-    respuesta:
+    response:
       'Son promedios móviles del precio: de 50 y de 200 días. Si el promedio corto (50) está por encima del largo (200), la tendencia es alcista; si está por debajo, es bajista.',
   },
   {
     pregunta: '¿Cómo me avisan cuándo comprar o vender cripto?',
-    respuesta:
+    response:
       'Analizamos el mercado todos los días a las 8:15. Si el veredicto de Bitcoin o Ethereum cambia, te mandamos una notificación (por ejemplo: "BTC cambió de WATCH a BUY — señal de compra").',
   },
   {
     pregunta: '¿Es seguro invertir en cripto?',
-    respuesta:
+    response:
       'Las criptomonedas son muy volátiles: pueden bajar 20% o más en pocos días. El análisis técnico es informativo y no garantiza resultados. Invertí solo lo que estés dispuesto a perder.',
   },
 ];
@@ -139,7 +139,7 @@ export default function FaqSheet({ visible, onClose }: FaqSheetProps) {
       >
         {/* Cabecera del sheet */}
         <View style={s.cabecera}>
-          <Text style={s.titulo}>Consultas Frecuentes</Text>
+          <Text style={s.title}>Consultas Frecuentes</Text>
           <Pressable onPress={onClose} hitSlop={8} style={s.cerrar}>
             <Ionicons name="close" size={24} color={colors.label} />
           </Pressable>
@@ -148,17 +148,17 @@ export default function FaqSheet({ visible, onClose }: FaqSheetProps) {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
           {/* Lista agrupada: un solo grupo con separadores hairline */}
           <View style={s.grupo}>
-            {PREGUNTAS.map((item, index) => {
+            {QUESTIONS.map((item, index) => {
               const esAbierta = abierta === index;
-              const esUltima = index === PREGUNTAS.length - 1;
+              const esUltima = index === QUESTIONS.length - 1;
               return (
                 <Pressable
                   key={item.pregunta}
                   onPress={() => toggle(index)}
                   style={({ pressed }) => [s.fila, !esUltima && s.filaBorde, pressed && s.filaPressed]}
                 >
-                  <View style={s.filaContenido}>
-                    <View style={s.filaTitulo}>
+                  <View style={s.filaContent}>
+                    <View style={s.filaTitle}>
                       <Text style={s.pregunta}>{item.pregunta}</Text>
                       <Ionicons
                         name={esAbierta ? 'chevron-down' : 'chevron-forward'}
@@ -166,7 +166,7 @@ export default function FaqSheet({ visible, onClose }: FaqSheetProps) {
                         color={colors.tertiaryLabel}
                       />
                     </View>
-                    {esAbierta && <Text style={s.respuesta}>{item.respuesta}</Text>}
+                    {esAbierta && <Text style={s.response}>{item.response}</Text>}
                   </View>
                 </Pressable>
               );
@@ -202,7 +202,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], dark: boolean
       justifyContent: 'space-between',
       paddingBottom: spacing.lg,
     },
-    titulo: {
+    title: {
       ...typography.title3,
       fontWeight: '600',
       color: colors.label,
@@ -229,10 +229,10 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], dark: boolean
     filaPressed: {
       backgroundColor: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
     },
-    filaContenido: {
+    filaContent: {
       gap: spacing.sm,
     },
-    filaTitulo: {
+    filaTitle: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -243,7 +243,7 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors'], dark: boolean
       color: colors.label,
       flex: 1,
     },
-    respuesta: {
+    response: {
       ...typography.callout,
       color: colors.secondaryLabel,
     },

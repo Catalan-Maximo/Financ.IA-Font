@@ -13,20 +13,24 @@ import { spacing } from '../theme/spacing';
 
 interface RegisterScreenProps {
   /** Cambia a la pantalla de login. */
-  onIrALogin: () => void;
+  onGoToLogin: () => void;
 }
 
-export default function RegisterScreen({ onIrALogin }: RegisterScreenProps) {
+/**
+ * Pantalla de registro: crea un usuario nuevo y entra directo
+ * con el token que devuelve el backend.
+ */
+export default function RegisterScreen({ onGoToLogin }: RegisterScreenProps) {
   const { register } = useAuth();
-  const [nombre, setNombre] = useState('');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
-  const enviar = async () => {
-    if (!nombre.trim() || !email.trim() || !password) {
+  const send = async () => {
+    if (!name.trim() || !email.trim() || !password) {
       Alert.alert('Error', 'Completá todos los campos.');
       return;
     }
@@ -36,13 +40,13 @@ export default function RegisterScreen({ onIrALogin }: RegisterScreenProps) {
     }
     setLoading(true);
     try {
-      await register(nombre.trim(), email.trim(), password);
+      await register(name.trim(), email.trim(), password);
       // Éxito: App reacciona al token y pasa al flujo principal
     } catch (error) {
-      const mensaje = axios.isAxiosError(error)
+      const message = axios.isAxiosError(error)
         ? error.response?.data?.message ?? 'No se pudo registrar el usuario.'
         : 'No se pudo conectar con el backend.';
-      Alert.alert('Error', mensaje);
+      Alert.alert('Error', message);
     } finally {
       setLoading(false);
     }
@@ -50,14 +54,14 @@ export default function RegisterScreen({ onIrALogin }: RegisterScreenProps) {
 
   return (
     <Screen style={s.screen}>
-      <Header text="Crear Cuenta" level="title" style={s.titulo} />
-      <Text style={s.subtitulo}>Registrate para empezar a invertir</Text>
+      <Header text="Crear Cuenta" level="title" style={s.title} />
+      <Text style={s.subtitle}>Registrate para empezar a invertir</Text>
 
       <Card style={s.card}>
         <Input
           label="Nombre"
-          value={nombre}
-          onChangeText={setNombre}
+          value={name}
+          onChangeText={setName}
           placeholder="Tu nombre"
         />
         <Input
@@ -79,15 +83,15 @@ export default function RegisterScreen({ onIrALogin }: RegisterScreenProps) {
           title="Registrarme"
           icon="person-add-outline"
           haptics
-          onPress={enviar}
+          onPress={send}
           loading={loading}
-          style={s.boton}
+          style={s.button}
         />
       </Card>
 
       <View style={s.footer}>
-        <Text style={s.footerTexto}>¿Ya tenés cuenta?</Text>
-        <Pressable onPress={onIrALogin}>
+        <Text style={s.footerText}>¿Ya tenés cuenta?</Text>
+        <Pressable onPress={onGoToLogin}>
           <Text style={s.footerLink}>Iniciá sesión</Text>
         </Pressable>
       </View>
@@ -98,21 +102,21 @@ export default function RegisterScreen({ onIrALogin }: RegisterScreenProps) {
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
     screen: { justifyContent: 'center' },
-    titulo: { textAlign: 'center' },
-    subtitulo: {
+    title: { textAlign: 'center' },
+    subtitle: {
       ...typography.body,
       color: colors.secondaryLabel,
       textAlign: 'center',
       marginBottom: spacing.xxl,
     },
     card: { padding: spacing.lg },
-    boton: { marginTop: spacing.xl },
+    button: { marginTop: spacing.xl },
     footer: {
       flexDirection: 'row',
       justifyContent: 'center',
       gap: spacing.sm,
       marginTop: spacing.xl,
     },
-    footerTexto: { ...typography.body, color: colors.secondaryLabel },
+    footerText: { ...typography.body, color: colors.secondaryLabel },
     footerLink: { ...typography.body, color: colors.brand, fontWeight: '600' },
   });

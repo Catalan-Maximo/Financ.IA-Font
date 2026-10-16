@@ -1,22 +1,22 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from '../lib/api';
-import type { Activo } from '../domain/activo';
+import type { Asset } from '../domain/asset';
 
 /**
  * Hook que carga las tasas de mercado (GET /activos/tasas).
  * Encapsula fetching, estado de carga y error — la pantalla
  * solo renderiza y muestra el alert cuando hay error.
  */
-export default function useMercado() {
-  const [activos, setActivos] = useState<Activo[]>([]);
+export default function useMarket() {
+  const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const cargar = useCallback(async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await api.get<Activo[]>('/activos/tasas');
-      setActivos(response.data);
+      const response = await api.get<Asset[]>('/assets/rates');
+      setAssets(response.data);
       setError(false);
     } catch (e) {
       console.error(e);
@@ -27,8 +27,8 @@ export default function useMercado() {
   }, []);
 
   useEffect(() => {
-    cargar();
-  }, [cargar]);
+    load();
+  }, [load]);
 
-  return { activos, loading, error, limpiarError: () => setError(false), recargar: cargar };
+  return { assets, loading, error, clearError: () => setError(false), reload: load };
 }

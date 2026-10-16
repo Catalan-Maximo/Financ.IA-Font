@@ -15,7 +15,7 @@ interface BarraProgresoProps {
  * Barra de progreso plana: track gris + relleno de marca.
  * Misma barra para metas, categorías de gasto y probabilidades.
  */
-export default function BarraProgreso({ progreso, alto = 8, style }: BarraProgresoProps) {
+export default function ProgressBar({ progreso, alto = 8, style }: BarraProgresoProps) {
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
   const ancho = `${Math.min(100, Math.max(0, progreso))}%` as `${number}%`;

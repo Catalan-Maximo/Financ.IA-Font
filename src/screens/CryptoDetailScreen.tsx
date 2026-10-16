@@ -4,15 +4,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../lib/api';
 import Header from '../components/Header';
-import ExplicarDatosIA from '../components/ExplicarDatosIA';
+import ExplainWithAI from '../components/ExplainWithAI';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
-import BotonVolver from '../components/BotonVolver';
-import Advertencia from '../components/Advertencia';
+import BackButton from '../components/BackButton';
+import Warning from '../components/Warning';
 import Screen from '../components/Screen';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
-import type { CriptoEstado, VelaDiaria } from '../domain/cripto';
-import { analizarChecks } from '../domain/cripto';
+import type { CryptoState, DailyCandle } from '../domain/crypto';
+import { analyzeChecks } from '../domain/crypto';
 import { useTheme } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
@@ -23,49 +23,53 @@ const TONO_VEREDICTO: Record<string, 'success' | 'warning' | 'danger'> = {
   AVOID: 'danger',
 };
 
-interface CriptoDetalleProps {
-  estado: CriptoEstado;
-  onVolver: () => void;
+interface CryptoDetailProps {
+  state: CryptoState;
+  onBack: () => void;
 }
 
 /**
  * Detalle de un par cripto: por qué el veredicto (checklist con ✓/✗),
  * rango de 20 días, resumen de RSI/tendencia y advertencia de volatilidad.
  */
-export default function CriptoDetalleScreen({ estado, onVolver }: CriptoDetalleProps) {
+/**
+ * Detalle de BTC/ETH: análisis técnico completo (precio, RSI,
+ * medias móviles, soportes/resistencias) y veredicto BUY/WATCH/AVOID.
+ */
+export default function CryptoDetailScreen({ state, onBack }: CryptoDetailProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
-  const nombre = estado.simbolo.startsWith('BTC') ? 'Bitcoin' : 'Ethereum';
-  const checks = analizarChecks(estado);
+  const name = state.symbol.startsWith('BTC') ? 'Bitcoin' : 'Ethereum';
+  const checks = analyzeChecks(state);
 
   // Cierres diarios para el gráfico
-  const [velas, setVelas] = useState<VelaDiaria[]>([]);
+  const [candles, setCandles] = useState<DailyCandle[]>([]);
   useEffect(() => {
-    api.get<VelaDiaria[]>(`/cripto/velas/${estado.simbolo}?dias=30`)
-      .then((response) => setVelas(response.data))
+    api.get<DailyCandle[]>(`/crypto/candles/${state.symbol}?days=30`)
+      .then((response) => setCandles(response.data))
       .catch((e) => console.warn('No se pudieron cargar las velas', e));
-  }, [estado.simbolo]);
+  }, [state.symbol]);
 
   // Normalización del gráfico de barras
-  const cierres = velas.map((v) => v.cierre);
-  const minCierre = cierres.length > 0 ? Math.min(...cierres) : 0;
-  const maxCierre = cierres.length > 0 ? Math.max(...cierres) : 1;
-  const rangoCierres = Math.max(maxCierre - minCierre, 1);
+  const cierres = candles.map((v) => v.close);
+  const minClose = cierres.length > 0 ? Math.min(...cierres) : 0;
+  const maxClose = cierres.length > 0 ? Math.max(...cierres) : 1;
+  const rangoCierres = Math.max(maxClose - minClose, 1);
   const tendenciaAlza = cierres.length > 1 && cierres[cierres.length - 1] >= cierres[0];
 
   // Posición del precio dentro del rango de 20 días (0 = soporte, 1 = resistencia)
-  const rango = estado.resistencia20 - estado.soporte20;
+  const rango = state.resistance20 - state.support20;
   const posicion = rango > 0
-    ? Math.min(1, Math.max(0, (estado.precio - estado.soporte20) / rango))
+    ? Math.min(1, Math.max(0, (state.price - state.support20) / rango))
     : 0.5;
 
   const interpretarRsi = (rsi: number) =>
     rsi < 30 ? 'sobrevendido — posible rebote' : rsi > 70 ? 'sobrecomprado — cuidado con correcciones' : 'zona neutral';
 
-  const tendencia = estado.sma50 != null && estado.sma200 != null
-    ? (estado.sma50 > estado.sma200 ? 'alcista (SMA50 por encima de SMA200)' : 'bajista (SMA50 por debajo de SMA200)')
+  const trend = state.sma50 != null && state.sma200 != null
+    ? (state.sma50 > state.sma200 ? 'alcista (SMA50 por encima de SMA200)' : 'bajista (SMA50 por debajo de SMA200)')
     : 'sin datos suficientes';
 
   return (
@@ -77,32 +81,32 @@ export default function CriptoDetalleScreen({ estado, onVolver }: CriptoDetalleP
           paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.xxl,
         }}
       >
-        <BotonVolver onPress={onVolver} />
+        <BackButton onPress={onBack} />
 
         {/* Encabezado */}
         <View style={s.encabezado}>
-          <Header text={nombre} level="title" />
-          <Badge label={estado.veredicto} tone={TONO_VEREDICTO[estado.veredicto] ?? 'warning'} />
+          <Header text={name} level="title" />
+          <Badge label={state.verdict} tone={TONO_VEREDICTO[state.verdict] ?? 'warning'} />
         </View>
-        <Text style={s.precio} numberOfLines={1}>${estado.precio.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</Text>
-        {estado.cambio3d != null && (
-          <Text style={[s.cambio, estado.cambio3d >= 0 ? s.verde : s.rojo]}>
-            {estado.cambio3d >= 0 ? '+' : ''}{estado.cambio3d.toFixed(1)}% últimos 3 días
+        <Text style={s.price} numberOfLines={1}>${state.price.toLocaleString('es-AR', { minimumFractionDigits: 2 })}</Text>
+        {state.change3d != null && (
+          <Text style={[s.cambio, state.change3d >= 0 ? s.green : s.red]}>
+            {state.change3d >= 0 ? '+' : ''}{state.change3d.toFixed(1)}% últimos 3 días
           </Text>
         )}
 
         {/* Gráfico de cierres (30 días) */}
-        {velas.length > 0 && (
+        {candles.length > 0 && (
           <Card style={s.card}>
             <Header text="Precio — últimos 30 días" level="section" style={s.tituloSeccion} />
             <View style={s.grafico}>
-              {cierres.map((cierre, i) => (
+              {cierres.map((close, i) => (
                 <View
                   key={i}
                   style={[
                     s.barra,
                     {
-                      height: Math.max(((cierre - minCierre) / rangoCierres) * 100, 6),
+                      height: Math.max(((close - minClose) / rangoCierres) * 100, 6),
                       backgroundColor: tendenciaAlza ? colors.systemGreen : colors.systemRed,
                     },
                   ]}
@@ -110,8 +114,8 @@ export default function CriptoDetalleScreen({ estado, onVolver }: CriptoDetalleP
               ))}
             </View>
             <View style={s.fila}>
-              <Text style={s.label}>Mín ${minCierre.toLocaleString('es-AR')}</Text>
-              <Text style={s.label}>Máx ${maxCierre.toLocaleString('es-AR')}</Text>
+              <Text style={s.label}>Mín ${minClose.toLocaleString('es-AR')}</Text>
+              <Text style={s.label}>Máx ${maxClose.toLocaleString('es-AR')}</Text>
             </View>
           </Card>
         )}
@@ -123,11 +127,11 @@ export default function CriptoDetalleScreen({ estado, onVolver }: CriptoDetalleP
             <View style={[s.marcador, { left: `${posicion * 100}%` }]} />
           </View>
           <View style={s.fila}>
-            <Text style={s.label}>Soporte ${estado.soporte20.toLocaleString('es-AR')}</Text>
-            <Text style={s.label}>Resistencia ${estado.resistencia20.toLocaleString('es-AR')}</Text>
+            <Text style={s.label}>Soporte ${state.support20.toLocaleString('es-AR')}</Text>
+            <Text style={s.label}>Resistencia ${state.resistance20.toLocaleString('es-AR')}</Text>
           </View>
           <Text style={s.nota}>
-            El punto verde es el precio actual. Más cerca del soporte = mejor momento de entrada.
+            El punto green es el price actual. Más cerca del soporte = mejor momento de entrada.
           </Text>
         </Card>
 
@@ -137,13 +141,13 @@ export default function CriptoDetalleScreen({ estado, onVolver }: CriptoDetalleP
           {checks.map((check) => (
             <View key={check.label} style={s.checkFila}>
               <Ionicons
-                name={check.pasado ? 'checkmark-circle' : 'close-circle'}
+                name={check.passed ? 'checkmark-circle' : 'close-circle'}
                 size={20}
-                color={check.pasado ? colors.systemGreen : colors.systemRed}
+                color={check.passed ? colors.systemGreen : colors.systemRed}
               />
-              <View style={s.checkTexto}>
+              <View style={s.checkText}>
                 <Text style={s.checkLabel}>{check.label}</Text>
-                <Text style={s.checkDetalle}>{check.detalle}</Text>
+                <Text style={s.checkDetail}>{check.detail}</Text>
               </View>
             </View>
           ))}
@@ -154,37 +158,37 @@ export default function CriptoDetalleScreen({ estado, onVolver }: CriptoDetalleP
           <Header text="Resumen del mercado" level="section" style={s.tituloSeccion} />
           <View style={s.fila}>
             <Text style={s.label}>RSI (14)</Text>
-            <Text style={s.valor}>
-              {estado.rsi14 != null ? `${estado.rsi14.toFixed(1)} — ${interpretarRsi(estado.rsi14)}` : 'n/d'}
+            <Text style={s.value}>
+              {state.rsi14 != null ? `${state.rsi14.toFixed(1)} — ${interpretarRsi(state.rsi14)}` : 'n/d'}
             </Text>
           </View>
           <View style={s.fila}>
             <Text style={s.label}>Tendencia</Text>
-            <Text style={s.valor}>{tendencia}</Text>
+            <Text style={s.value}>{trend}</Text>
           </View>
           <View style={s.fila}>
             <Text style={s.label}>SMA 50 / SMA 200</Text>
-            <Text style={s.valor}>
-              {estado.sma50 != null ? `$${estado.sma50.toLocaleString('es-AR')}` : 'n/d'}
+            <Text style={s.value}>
+              {state.sma50 != null ? `$${state.sma50.toLocaleString('es-AR')}` : 'n/d'}
               {' / '}
-              {estado.sma200 != null ? `$${estado.sma200.toLocaleString('es-AR')}` : 'n/d'}
+              {state.sma200 != null ? `$${state.sma200.toLocaleString('es-AR')}` : 'n/d'}
             </Text>
           </View>
         </Card>
 
         {/* Advertencia de volatilidad */}
-        <Advertencia texto={
+        <Warning text={
           'Las criptomonedas son muy volátiles: pueden bajar 20% o más en pocos días. ' +
           'Este análisis técnico es informativo y no garantiza resultados. Invertí solo ' +
           'lo que estés dispuesto a perder.'
         } />
 
-        <ExplicarDatosIA datos={
-          `${nombre}: precio $${estado.precio.toLocaleString('es-AR')}, ` +
-          `RSI(14) ${estado.rsi14 != null ? estado.rsi14.toFixed(1) : 'n/d'}, ` +
-          `soporte $${estado.soporte20.toLocaleString('es-AR')}, resistencia $${estado.resistencia20.toLocaleString('es-AR')}, ` +
-          `veredicto ${estado.veredicto} (${estado.checksPasados}/4 checks), ` +
-          `variación 3 días ${estado.cambio3d != null ? estado.cambio3d.toFixed(1) + '%' : 'n/d'}.`
+        <ExplainWithAI data={
+          `${name}: precio $${state.price.toLocaleString('es-AR')}, ` +
+          `RSI(14) ${state.rsi14 != null ? state.rsi14.toFixed(1) : 'n/d'}, ` +
+          `soporte $${state.support20.toLocaleString('es-AR')}, resistencia $${state.resistance20.toLocaleString('es-AR')}, ` +
+          `veredicto ${state.verdict} (${state.checksPassed}/4 checks), ` +
+          `variación 3 días ${state.change3d != null ? state.change3d.toFixed(1) + '%' : 'n/d'}.`
         } />
       </ScrollView>
     </Screen>
@@ -194,10 +198,10 @@ export default function CriptoDetalleScreen({ estado, onVolver }: CriptoDetalleP
 const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
   StyleSheet.create({
     encabezado: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
-    precio: { ...typography.title1, fontWeight: '700', color: colors.label, marginBottom: spacing.xs },
+    price: { ...typography.title1, fontWeight: '700', color: colors.label, marginBottom: spacing.xs },
     cambio: { ...typography.footnote, marginBottom: spacing.xl },
-    verde: { color: colors.systemGreen },
-    rojo: { color: colors.systemRed },
+    green: { color: colors.systemGreen },
+    red: { color: colors.systemRed },
 
     card: { padding: spacing.lg, marginBottom: spacing.lg },
     tituloSeccion: { marginBottom: spacing.lg },
@@ -230,11 +234,11 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     },
     fila: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.sm, gap: spacing.md },
     label: { ...typography.footnote, color: colors.secondaryLabel, flexShrink: 1 },
-    valor: { ...typography.footnote, fontWeight: '600', color: colors.label, textAlign: 'right', flexShrink: 1 },
+    value: { ...typography.footnote, fontWeight: '600', color: colors.label, textAlign: 'right', flexShrink: 1 },
     nota: { ...typography.caption2, color: colors.tertiaryLabel, marginTop: spacing.sm },
 
     checkFila: { flexDirection: 'row', gap: spacing.md, marginBottom: spacing.lg },
-    checkTexto: { flex: 1 },
+    checkText: { flex: 1 },
     checkLabel: { ...typography.subheadline, fontWeight: '600', color: colors.label },
-    checkDetalle: { ...typography.caption1, color: colors.secondaryLabel, marginTop: 2 },
+    checkDetail: { ...typography.caption1, color: colors.secondaryLabel, marginTop: 2 },
   });

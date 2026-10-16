@@ -4,45 +4,45 @@
  */
 
 /** Request body para POST /activos/comparar */
-export interface ComparacionRequest {
+export interface ComparisonRequest {
   /** Monto en pesos a invertir. */
-  monto: number;
+  amount: number;
   /** Plazo de la inversión en meses. */
-  plazoMeses: number;
+  months: number;
   /** Inflación mensual estimada (%, ej. 4.0 = 4%). */
-  inflacionMensual: number;
+  monthlyInflation: number;
 }
 
 /** Detalle de rendimiento calculado para un activo individual. */
-export interface RendimientoDTO {
-  entidad: string;
-  tipo: string;
+export interface Performance {
+  entity: string;
+  type: string;
   /** Tasa Nominal Anual. */
   tna: number;
   /** Tasa Efectiva Mensual (%). */
-  tasaEfectivaMensual: number;
+  effectiveMonthlyRate: number;
   /** Tasa Real Mensual ajustada por inflación (%). */
-  tasaRealMensual: number;
+  realMonthlyRate: number;
   /** Ganancia nominal proyectada en $ al final del plazo. */
-  gananciaNominal: number;
+  nominalGain: number;
   /** Ganancia real (ajustada por inflación) en $ al final del plazo. */
-  gananciaReal: number;
+  realGain: number;
   /** true si la tasa real supera la inflación. */
-  leGanaALaInflacion: boolean;
+  beatsInflation: boolean;
   /** Percentil 5 del retorno total (Monte Carlo), null en renta fija. */
-  peorEscenario: number | null;
+  worstCase: number | null;
   /** Percentil 95 del retorno total (Monte Carlo), null en renta fija. */
-  mejorEscenario: number | null;
+  bestCase: number | null;
   /** Nivel de riesgo según volatilidad histórica. */
-  riesgo: string;
+  risk: string;
 }
 
 /** Response de POST /activos/comparar */
-export interface ComparacionResponse {
-  montoInvertido: number;
-  plazoMeses: number;
-  inflacionMensualUsada: number;
-  rendimientos: RendimientoDTO[];
+export interface ComparisonResponse {
+  investedAmount: number;
+  months: number;
+  monthlyInflationUsed: number;
+  performances: Performance[];
   /** Entidad con la mejor tasa real. */
-  mejorOpcion: string;
+  bestOption: string;
 }

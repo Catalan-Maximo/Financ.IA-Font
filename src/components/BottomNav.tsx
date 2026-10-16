@@ -21,12 +21,12 @@ interface BottomNavProps {
   onChange: (tab: TabKey) => void;
 }
 
-const TABS: { key: TabKey; icono: keyof typeof Ionicons.glyphMap; iconoActivo: keyof typeof Ionicons.glyphMap; label: string }[] = [
-  { key: 'dashboard', icono: 'home-outline', iconoActivo: 'home', label: 'Inicio' },
-  { key: 'mercados', icono: 'stats-chart-outline', iconoActivo: 'stats-chart', label: 'Mercados' },
-  { key: 'midinero', icono: 'wallet-outline', iconoActivo: 'wallet', label: 'Mi Dinero' },
-  { key: 'chat', icono: 'chatbubbles-outline', iconoActivo: 'chatbubbles', label: 'Chat' },
-  { key: 'simulador', icono: 'calculator-outline', iconoActivo: 'calculator', label: 'Simular' },
+const TABS: { key: TabKey; icono: keyof typeof Ionicons.glyphMap; iconoAsset: keyof typeof Ionicons.glyphMap; label: string }[] = [
+  { key: 'dashboard', icono: 'home-outline', iconoAsset: 'home', label: 'Inicio' },
+  { key: 'mercados', icono: 'stats-chart-outline', iconoAsset: 'stats-chart', label: 'Mercados' },
+  { key: 'midinero', icono: 'wallet-outline', iconoAsset: 'wallet', label: 'Mi Dinero' },
+  { key: 'chat', icono: 'chatbubbles-outline', iconoAsset: 'chatbubbles', label: 'Chat' },
+  { key: 'simulador', icono: 'calculator-outline', iconoAsset: 'calculator', label: 'Simular' },
 ];
 
 const spring = { tension: 250, friction: 32, useNativeDriver: true };
@@ -101,7 +101,7 @@ export default function BottomNav({ activeTab, onChange }: BottomNavProps) {
         return (
           <Pressable key={tab.key} style={s.tab} onPress={() => handlePress(tab.key)}>
             <TabIcon
-              name={esActiva ? tab.iconoActivo : tab.icono}
+              name={esActiva ? tab.iconoAsset : tab.icono}
               active={esActiva}
               color={esActiva ? colors.brand : colors.secondaryLabel}
             />

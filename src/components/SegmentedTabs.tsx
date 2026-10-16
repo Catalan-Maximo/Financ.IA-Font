@@ -11,7 +11,7 @@ export interface OpcionTab {
 
 interface SegmentedTabsProps {
   /** Opciones del control (en orden). */
-  opciones: OpcionTab[];
+  options: OpcionTab[];
   /** Key de la opción activa. */
   activa: string;
   /** Callback con la key elegida. */
@@ -24,13 +24,13 @@ interface SegmentedTabsProps {
  * Control segmentado estilo iOS (p. ej. Gastos | Metas | Portafolio).
  * Un solo componente para todas las navegaciones por tabs de la app.
  */
-export default function SegmentedTabs({ opciones, activa, onCambiar, style }: SegmentedTabsProps) {
+export default function SegmentedTabs({ options, activa, onCambiar, style }: SegmentedTabsProps) {
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
   return (
     <View style={[s.tabs, style]}>
-      {opciones.map((t) => {
+      {options.map((t) => {
         const esActiva = t.key === activa;
         return (
           <Pressable
@@ -39,7 +39,7 @@ export default function SegmentedTabs({ opciones, activa, onCambiar, style }: Se
             style={[s.tab, esActiva && s.tabActiva]}
           >
             <Text
-              style={[s.tabTexto, esActiva && s.tabTextoActiva]}
+              style={[s.tabText, esActiva && s.tabTextoActiva]}
               maxFontSizeMultiplier={1.3}
             >
               {t.label}
@@ -62,6 +62,6 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
     },
     tab: { flex: 1, paddingVertical: spacing.sm, borderRadius: 8, alignItems: 'center' },
     tabActiva: { backgroundColor: colors.secondarySystemBackground },
-    tabTexto: { ...typography.subheadline, color: colors.secondaryLabel },
+    tabText: { ...typography.subheadline, color: colors.secondaryLabel },
     tabTextoActiva: { color: colors.label, fontWeight: '600' },
   });

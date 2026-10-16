@@ -4,37 +4,41 @@ import * as Haptics from 'expo-haptics';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Screen from '../components/Screen';
-import Cargando from '../components/Cargando';
-import Entrada from '../components/Entrada';
-import useTestPerfil from '../hooks/useTestPerfil';
+import Loading from '../components/Loading';
+import FadeIn from '../components/FadeIn';
+import useProfileTest from '../hooks/useProfileTest';
 import { useTheme } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 
 interface TestPerfilProps {
-  onTestComplete: (perfil: string) => void;
+  onTestComplete: (profile: string) => void;
 }
 
-export default function TestPerfilScreen({ onTestComplete }: TestPerfilProps) {
+/**
+ * Test del inversor: 6 preguntas que definen el perfil del usuario
+ * (Conservador, Moderado o Agresivo) según el puntaje.
+ */
+export default function ProfileTestScreen({ onTestComplete }: TestPerfilProps) {
   const {
-    preguntaActual,
-    indice,
-    totalPreguntas,
+    currentQuestion,
+    index,
+    totalQuestions,
     loading,
-    aviso,
-    limpiarAviso,
-    responder,
-  } = useTestPerfil(onTestComplete);
+    notice,
+    clearNotice,
+    answer,
+  } = useProfileTest(onTestComplete);
 
   const { colors } = useTheme();
   const s = useMemo(() => makeStyles(colors), [colors]);
 
   // El aviso (éxito u offline) se muestra como alert cuando el hook lo emite
   useEffect(() => {
-    if (aviso) {
-      Alert.alert(aviso.titulo, aviso.mensaje, [{ text: 'OK', onPress: limpiarAviso }]);
+    if (notice) {
+      Alert.alert(notice.title, notice.message, [{ text: 'OK', onPress: clearNotice }]);
     }
-  }, [aviso, limpiarAviso]);
+  }, [notice, clearNotice]);
 
   // Barra de progreso animada (ancho real medido del track)
   const [trackWidth, setTrackWidth] = useState(0);
@@ -42,25 +46,25 @@ export default function TestPerfilScreen({ onTestComplete }: TestPerfilProps) {
   useEffect(() => {
     if (trackWidth > 0) {
       Animated.timing(progreso, {
-        toValue: ((indice + 1) / totalPreguntas) * trackWidth,
+        toValue: ((index + 1) / totalQuestions) * trackWidth,
         duration: 300,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: false,
       }).start();
     }
-  }, [indice, progreso, totalPreguntas, trackWidth]);
+  }, [index, progreso, totalQuestions, trackWidth]);
 
-  const elegir = (puntos: number) => {
+  const elegir = (points: number) => {
     if (Platform.OS !== 'web') {
       Haptics.selectionAsync();
     }
-    responder(puntos);
+    answer(points);
   };
 
   if (loading) {
     return (
       <Screen>
-        <Cargando style={s.loading} />
+        <Loading style={s.loading} />
       </Screen>
     );
   }
@@ -68,7 +72,7 @@ export default function TestPerfilScreen({ onTestComplete }: TestPerfilProps) {
   return (
     <Screen>
       <Header
-        text={`Paso ${indice + 1} de ${totalPreguntas}`}
+        text={`Paso ${index + 1} de ${totalQuestions}`}
         level="label"
         style={s.stepLabel}
       />
@@ -80,15 +84,15 @@ export default function TestPerfilScreen({ onTestComplete }: TestPerfilProps) {
       </View>
 
       <ScrollView contentContainerStyle={s.optionsContainer} showsVerticalScrollIndicator={false}>
-        <Entrada key={indice}>
-          <Header text={preguntaActual.texto} level="subtitle" style={s.question} />
+        <FadeIn key={index}>
+          <Header text={currentQuestion.text} level="subtitle" style={s.question} />
 
-          {preguntaActual.opciones.map((opcion) => (
-            <Card key={opcion.letra} onPress={() => elegir(opcion.puntos)} style={s.optionCard}>
-              <Text style={s.optionText}>{opcion.letra}) {opcion.texto}</Text>
+          {currentQuestion.options.map((opcion) => (
+            <Card key={opcion.letter} onPress={() => elegir(opcion.points)} style={s.optionCard}>
+              <Text style={s.optionText}>{opcion.letter}) {opcion.text}</Text>
             </Card>
           ))}
-        </Entrada>
+        </FadeIn>
       </ScrollView>
     </Screen>
   );

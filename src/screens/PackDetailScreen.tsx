@@ -4,11 +4,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Header from '../components/Header';
 import Card from '../components/Card';
 import Badge from '../components/Badge';
-import ExplicarDatosIA from '../components/ExplicarDatosIA';
-import BotonVolver from '../components/BotonVolver';
+import ExplainWithAI from '../components/ExplainWithAI';
+import BackButton from '../components/BackButton';
 import Screen from '../components/Screen';
 import { TAB_BAR_HEIGHT } from '../components/BottomNav';
-import type { PackCotizacion } from '../domain/mercados';
+import type { PackQuote } from '../domain/markets';
 import { useTheme } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
@@ -20,15 +20,15 @@ const TONO_RIESGO: Record<string, 'success' | 'warning' | 'danger'> = {
 };
 
 interface PackDetailProps {
-  pack: PackCotizacion;
-  onVolver: () => void;
+  pack: PackQuote;
+  onBack: () => void;
 }
 
 /**
  * Detalle de un pack: variación ponderada y composición con
  * porcentajes reales de la base de datos.
  */
-export default function PackDetailScreen({ pack, onVolver }: PackDetailProps) {
+export default function PackDetailScreen({ pack, onBack }: PackDetailProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const s = useMemo(() => makeStyles(colors), [colors]);
@@ -42,37 +42,37 @@ export default function PackDetailScreen({ pack, onVolver }: PackDetailProps) {
           paddingBottom: TAB_BAR_HEIGHT + insets.bottom + spacing.xxl,
         }}
       >
-        <BotonVolver onPress={onVolver} />
+        <BackButton onPress={onBack} />
 
         <View style={s.encabezado}>
-          <Header text={pack.nombre} level="title" />
-          <Badge label={`Riesgo: ${pack.riesgo}`} tone={TONO_RIESGO[pack.riesgo] ?? 'warning'} />
+          <Header text={pack.name} level="title" />
+          <Badge label={`Riesgo: ${pack.risk}`} tone={TONO_RIESGO[pack.risk] ?? 'warning'} />
         </View>
-        <Text style={[s.variacion, pack.variacion24h >= 0 ? s.verde : s.rojo]}>
-          {pack.variacion24h >= 0 ? '+' : ''}{pack.variacion24h.toFixed(2)}% hoy
+        <Text style={[s.variation, pack.variation24h >= 0 ? s.green : s.red]}>
+          {pack.variation24h >= 0 ? '+' : ''}{pack.variation24h.toFixed(2)}% hoy
         </Text>
         <Text style={s.nota}>
-          La variación del pack es el promedio ponderado de la variación real de cada activo que lo compone.
+          La variación del pack es el promedio ponderado de la variación real de cada asset que lo compone.
         </Text>
 
         <Card style={s.card}>
-          <Header text="Composición" level="section" style={s.seccionTitulo} />
-          {pack.composicion.map((item) => (
+          <Header text="Composición" level="section" style={s.seccionTitle} />
+          {pack.composition.map((item) => (
             <View key={item.ticker} style={s.fila}>
               <View style={s.filaIzq}>
                 <View style={s.miniLogo}>
-                  <Text style={s.miniLogoTexto}>{item.ticker.substring(0, 2).toUpperCase()}</Text>
+                  <Text style={s.miniLogoText}>{item.ticker.substring(0, 2).toUpperCase()}</Text>
                 </View>
                 <Text style={s.ticker}>{item.ticker}</Text>
               </View>
-              <Text style={s.porcentaje}>{item.porcentaje}%</Text>
+              <Text style={s.percentage}>{item.percentage}%</Text>
             </View>
           ))}
         </Card>
 
-        <ExplicarDatosIA datos={
-          `Pack "${pack.nombre}" (riesgo ${pack.riesgo}): hoy rindió ${pack.variacion24h >= 0 ? '+' : ''}${pack.variacion24h.toFixed(2)}%. ` +
-          `Composición: ${pack.composicion.map((c) => `${c.ticker} ${c.porcentaje}%`).join(', ')}.`
+        <ExplainWithAI data={
+          `Pack "${pack.name}" (riesgo ${pack.risk}): hoy rindió ${pack.variation24h >= 0 ? '+' : ''}${pack.variation24h.toFixed(2)}%. ` +
+          `Composición: Composición: Composición: Composición: Composición: Composición: Composición: Composición: Composición: Composición: Composición: Composición: Composición: Composición: Composición: Composición: ${pack.composition.map((c) => `${c.ticker} ${c.percentage}%`).join(', ')}.`
         } />
       </ScrollView>
     </Screen>
@@ -87,13 +87,13 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       justifyContent: 'space-between',
       marginBottom: spacing.sm,
     },
-    variacion: { ...typography.title2, fontWeight: '700', marginBottom: spacing.sm },
-    verde: { color: colors.systemGreen },
-    rojo: { color: colors.systemRed },
+    variation: { ...typography.title2, fontWeight: '700', marginBottom: spacing.sm },
+    green: { color: colors.systemGreen },
+    red: { color: colors.systemRed },
     nota: { ...typography.caption1, color: colors.secondaryLabel, marginBottom: spacing.xl },
 
     card: { padding: spacing.lg, marginBottom: spacing.xl },
-    seccionTitulo: { marginBottom: spacing.lg },
+    seccionTitle: { marginBottom: spacing.lg },
     fila: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -109,9 +109,9 @@ const makeStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    miniLogoTexto: { ...typography.caption2, fontWeight: '700', color: colors.label },
+    miniLogoText: { ...typography.caption2, fontWeight: '700', color: colors.label },
     ticker: { ...typography.body, fontWeight: '600', color: colors.label },
-    porcentaje: { ...typography.body, fontWeight: '700', color: colors.brand },
+    percentage: { ...typography.body, fontWeight: '700', color: colors.brand },
 
-    boton: { marginTop: spacing.sm },
+    button: { marginTop: spacing.sm },
   });
